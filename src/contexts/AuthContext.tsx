@@ -36,7 +36,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, _password: string): Promise<boolean> => {
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
