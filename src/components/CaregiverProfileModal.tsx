@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "./Modal";
 import EmailUserModal from "./EmailUserModal";
+import { caregiversService, type CaregiverProfileResponse } from "../services";
 
 interface CaregiverProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  caregiverId: number;
+  caregiverId: string;
 }
 
 const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
@@ -15,38 +16,100 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("Profile Information");
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [profile, setProfile] = useState<
+    CaregiverProfileResponse["data"] | null
+  >(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string>("");
+  const [verifying, setVerifying] = useState<{
+    [key: string]: "verify" | "reject" | null;
+  }>({
+    valid_id: null,
+    work_authorization: null,
+    passport: null,
+  });
 
-  // Mock data - in a real app, this would come from an API
+  // Derived fallback/local display using API data where possible
   const caregiver = {
     id: caregiverId,
-    name: "Sophia Davis",
-    role: "Senior Caregiver",
-    email: "sophiadavis@gmail.com",
-    phone: "+1 (907) 535-0111",
-    bio: "I'm a compassionate caregiver with 5+ years of experience supporting seniors and individuals with special needs. I assist with daily activities, medication reminders, light housekeeping, and companionship.",
+    name:
+      (profile?.user.first_name && profile?.user.last_name
+        ? `${profile.user.first_name} ${profile.user.last_name}`
+        : undefined) || "",
+    role: "Caregiver",
+    email: profile?.user.email || "",
+    phone: profile?.user.phone_number || "",
+    bio: profile?.caregiver_profile?.about || "",
     profileImage:
+      profile?.user.profile_photo ||
       "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-    totalRevenue: "$5,500.00",
-    jobsCompleted: 20,
-    totalHoursWorked: 88,
-    yearsOfExperience: 5,
-    rating: 4.5,
-    reviewCount: 9,
-    experience:
-      "With over 5 years of experience in home care, I provide reliable support for seniors, individuals with disabilities, and families in need. I'm trained in personal care, medication reminders, light housekeeping, and emotional companionship.",
-    languages: ["English", "French"],
-    specialties: ["Senior care", "Child care"],
-    serviceArea: "Downtown Houston",
-    hourlyRate: "$40.00",
-    gender: "Female",
-    dateOfBirth: "01 Feb 1992",
-    address: "221B Baker Street, Maryland",
-    country: "United States",
-    zipCode: "18235",
-    accountCreated: "24 Jun 2024",
-    lastActive: "22 Jul 2025",
-    isVerified: true,
+    totalRevenue: "N/A", // Not available in API
+    jobsCompleted: 0, // Not available in API
+    totalHoursWorked: 0, // Not available in API
+    yearsOfExperience: profile?.caregiver_profile?.years_of_experience || 0,
+    rating: 0, // Not available in API
+    reviewCount: 0, // Not available in API
+    experience: profile?.caregiver_profile?.summary_of_experience || "",
+    languages:
+      profile?.caregiver_profile?.languages?.map((lang) => lang.name) || [],
+    specialties:
+      profile?.caregiver_profile?.care_types?.map((care) => care.name) || [],
+    serviceArea: profile?.caregiver_profile?.service_address || "",
+    hourlyRate: (() => {
+      const value = profile?.caregiver_profile?.hourly_rate as unknown;
+      if (value === null || value === undefined) return "";
+      const num = typeof value === "number" ? value : Number(value as string);
+      return Number.isFinite(num) ? `$${num.toFixed(2)}` : "";
+    })(),
+    gender: profile?.user.gender || "",
+    dateOfBirth: profile?.user.dob || "",
+    address: profile?.user.address || "",
+    country: profile?.user.country?.name || "",
+    zipCode: profile?.user.zip_code || "",
+    accountCreated: profile?.user.created_at
+      ? new Date(profile.user.created_at).toLocaleDateString()
+      : "",
+    lastActive: profile?.user.modified_at
+      ? new Date(profile.user.modified_at).toLocaleDateString()
+      : "",
+    isVerified: profile?.kyc_profile?.valid_id_verified || false,
+    // Additional fields from caregiver_profile
+    canTravel: profile?.caregiver_profile?.can_travel || false,
+    canProvideLiveInCare:
+      profile?.caregiver_profile?.can_provide_live_in_care || false,
+    acceptBooking: profile?.caregiver_profile?.accept_booking || false,
+    serviceRadius: profile?.caregiver_profile?.service_radius || 0,
+    videoIntro: profile?.caregiver_profile?.video_intro || null,
+    certificates: profile?.caregiver_profile?.certificates || [],
+    serviceTypes:
+      profile?.caregiver_profile?.service_types?.map(
+        (service) => service.name
+      ) || [],
   };
+
+  useEffect(() => {
+    if (!isOpen || !caregiverId) return;
+    let ignore = false;
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await caregiversService.getCaregiverById(caregiverId);
+        if (!ignore) setProfile(res.data);
+      } catch (e) {
+        if (!ignore)
+          setError(e instanceof Error ? e.message : "Failed to load profile");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, [isOpen, caregiverId]);
 
   // Mock review data
   const reviews = [
@@ -108,7 +171,7 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
     },
   ];
 
-  const tabs = ["Profile Information", "User Reviews", "Review Uploads"];
+  const tabs = ["Profile Information", "User Reviews", "Review Uploads", "KYC"];
 
   const handleEmailUser = () => {
     setIsEmailModalOpen(true);
@@ -126,6 +189,112 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
     navigator.clipboard.writeText(text);
     // You could add a toast notification here
   };
+
+  const handleViewImage = (imageUrl: string) => {
+    setViewingImageUrl(imageUrl);
+    setImageViewerOpen(true);
+  };
+
+  const handleKycVerification = async (
+    type: "valid_id" | "work_authorization" | "passport",
+    verified: boolean
+  ) => {
+    if (!profile?.user?.id) return;
+
+    const action = verified ? "verify" : "reject";
+    setVerifying((prev) => ({ ...prev, [type]: action }));
+    try {
+      let response;
+      switch (type) {
+        case "valid_id":
+          response = await caregiversService.verifyValidId(
+            profile.user.id,
+            verified
+          );
+          break;
+        case "work_authorization":
+          response = await caregiversService.verifyWorkAuthorization(
+            profile.user.id,
+            verified
+          );
+          break;
+        case "passport":
+          response = await caregiversService.verifyPassport(
+            profile.user.id,
+            verified
+          );
+          break;
+      }
+
+      if (response.success) {
+        // Refresh the profile data to get updated verification status
+        const updatedProfile = await caregiversService.getCaregiverById(
+          caregiverId
+        );
+        setProfile(updatedProfile.data);
+      }
+    } catch (err) {
+      console.error(`${type} verification error:`, err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Failed to ${verified ? "verify" : "reject"} ${type}`
+      );
+    } finally {
+      setVerifying((prev) => ({ ...prev, [type]: null }));
+    }
+  };
+
+  if (loading) {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <div className="flex h-[85vh] overflow-hidden">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading caregiver profile...</p>
+            </div>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
+  if (error) {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <div className="flex h-[85vh] overflow-hidden">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-5 w-5 text-red-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">Error</h3>
+                    <p className="text-sm text-red-700 mt-1">{error}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <>
@@ -326,83 +495,80 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
             {/* Profile Information Content */}
             {activeTab === "Profile Information" && (
               <div className="space-y-6">
-                {/* Revenue and Metrics Row */}
+                {/* Service Information Row */}
                 <div className="grid grid-cols-3 gap-4">
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <h3 className="text-sm font-medium text-blue-600 mb-1">
-                      Total User Revenue
+                      Years of Experience
                     </h3>
                     <p className="text-2xl font-bold text-blue-900">
-                      {caregiver.totalRevenue}
+                      {caregiver.yearsOfExperience}
                     </p>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
                     <h3 className="text-sm font-medium text-green-600 mb-1">
-                      Jobs Completed
+                      Service Radius
                     </h3>
                     <p className="text-2xl font-bold text-green-900">
-                      {caregiver.jobsCompleted}
+                      {caregiver.serviceRadius} miles
                     </p>
                   </div>
                   <div className="bg-purple-50 p-4 rounded-lg">
                     <h3 className="text-sm font-medium text-purple-600 mb-1">
-                      Total Hours
+                      Hourly Rate
                     </h3>
                     <p className="text-2xl font-bold text-purple-900">
-                      {caregiver.totalHoursWorked}
+                      {caregiver.hourlyRate || "Not set"}
                     </p>
                   </div>
                 </div>
 
-                {/* Rating */}
+                {/* Service Capabilities */}
                 <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Rating
-                      </h3>
-                      <div className="flex items-center space-x-2">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <svg
-                              key={i}
-                              className={`w-5 h-5 ${
-                                i < Math.floor(caregiver.rating)
-                                  ? "text-yellow-400"
-                                  : i < caregiver.rating
-                                  ? "text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          ))}
-                        </div>
-                        <span className="text-lg font-semibold text-gray-900">
-                          {caregiver.rating} out of 5
-                        </span>
-                        <span className="text-gray-500">
-                          ({caregiver.reviewCount} Reviews)
-                        </span>
-                      </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Service Capabilities
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-3 h-3 rounded-full ${
+                          caregiver.canTravel ? "bg-green-500" : "bg-red-500"
+                        }`}
+                      ></div>
+                      <span className="text-sm text-gray-700">Can Travel</span>
                     </div>
-                    <button className="text-blue-600 hover:text-blue-700">
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-3 h-3 rounded-full ${
+                          caregiver.canProvideLiveInCare
+                            ? "bg-green-500"
+                            : "bg-red-500"
+                        }`}
+                      ></div>
+                      <span className="text-sm text-gray-700">
+                        Live-in Care
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-3 h-3 rounded-full ${
+                          caregiver.acceptBooking
+                            ? "bg-green-500"
+                            : "bg-red-500"
+                        }`}
+                      ></div>
+                      <span className="text-sm text-gray-700">
+                        Accepting Bookings
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-3 h-3 rounded-full ${
+                          caregiver.isVerified ? "bg-green-500" : "bg-red-500"
+                        }`}
+                      ></div>
+                      <span className="text-sm text-gray-700">Verified</span>
+                    </div>
                   </div>
                 </div>
 
@@ -417,44 +583,90 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
                   <p className="text-gray-700">{caregiver.experience}</p>
                 </div>
 
-                {/* Skills */}
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Skills & Specialization
-                  </h3>
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">
-                        Languages spoken
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {caregiver.languages.map((language) => (
-                          <span
-                            key={language}
-                            className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                          >
-                            {language}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">
-                        Areas of specialty
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {caregiver.specialties.map((specialty) => (
-                          <span
-                            key={specialty}
-                            className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full"
-                          >
-                            {specialty}
-                          </span>
-                        ))}
-                      </div>
+                {/* Video Introduction */}
+                {caregiver.videoIntro && (
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Introduction Video
+                    </h3>
+                    <div className="relative bg-gray-100 rounded-lg overflow-hidden">
+                      <video
+                        controls
+                        className="w-full h-64 object-cover"
+                        poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NjY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkludHJvZHVjdGlvbiBWaWRlbzwvdGV4dD48L3N2Zz4="
+                      >
+                        <source src={caregiver.videoIntro} type="video/mp4" />
+                        <source src={caregiver.videoIntro} type="video/webm" />
+                        <source src={caregiver.videoIntro} type="video/ogg" />
+                        Your browser does not support the video tag.
+                      </video>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {/* Skills & Specialization */}
+                {(caregiver.languages.length > 0 ||
+                  caregiver.specialties.length > 0 ||
+                  caregiver.serviceTypes.length > 0) && (
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Skills & Specialization
+                    </h3>
+                    <div className="space-y-3">
+                      {caregiver.languages.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">
+                            Languages Spoken
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {caregiver.languages.map((language) => (
+                              <span
+                                key={language}
+                                className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                              >
+                                {language}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {caregiver.specialties.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">
+                            Areas of Specialty
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {caregiver.specialties.map((specialty) => (
+                              <span
+                                key={specialty}
+                                className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full"
+                              >
+                                {specialty}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {caregiver.serviceTypes.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">
+                            Service Types
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {caregiver.serviceTypes.map((serviceType) => (
+                              <span
+                                key={serviceType}
+                                className="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full"
+                              >
+                                {serviceType}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Service Area & Rates */}
                 <div className="bg-white p-4 rounded-lg border border-gray-200">
@@ -765,6 +977,262 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
                 </div>
               </div>
             )}
+
+            {/* KYC Tab */}
+            {activeTab === "KYC" && (
+              <div className="space-y-6">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Valid ID
+                    </h3>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleKycVerification("valid_id", true)}
+                        disabled={verifying.valid_id !== null}
+                        className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {verifying.valid_id === "verify"
+                          ? "Verifying..."
+                          : "Verify"}
+                      </button>
+                      <button
+                        onClick={() => handleKycVerification("valid_id", false)}
+                        disabled={verifying.valid_id !== null}
+                        className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {verifying.valid_id === "reject"
+                          ? "Rejecting..."
+                          : "Reject"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Valid ID Type</p>
+                      <p className="text-gray-900">
+                        {profile?.kyc_profile?.valid_id_type || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Valid ID Verified</p>
+                      <p
+                        className={`font-medium ${
+                          profile?.kyc_profile?.valid_id_verified
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {profile?.kyc_profile?.valid_id_verified
+                          ? "Verified"
+                          : "Not Verified"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Valid ID Front</p>
+                      {profile?.kyc_profile?.valid_id_front ? (
+                        <button
+                          onClick={() =>
+                            handleViewImage(
+                              profile.kyc_profile!.valid_id_front!
+                            )
+                          }
+                          className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                        >
+                          View
+                        </button>
+                      ) : (
+                        <span className="text-gray-500">—</span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Valid ID Back</p>
+                      {profile?.kyc_profile?.valid_id_back ? (
+                        <button
+                          onClick={() =>
+                            handleViewImage(profile.kyc_profile!.valid_id_back!)
+                          }
+                          className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                        >
+                          View
+                        </button>
+                      ) : (
+                        <span className="text-gray-500">—</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Work Authorization
+                    </h3>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() =>
+                          handleKycVerification("work_authorization", true)
+                        }
+                        disabled={verifying.work_authorization !== null}
+                        className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {verifying.work_authorization === "verify"
+                          ? "Verifying..."
+                          : "Verify"}
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleKycVerification("work_authorization", false)
+                        }
+                        disabled={verifying.work_authorization !== null}
+                        className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {verifying.work_authorization === "reject"
+                          ? "Rejecting..."
+                          : "Reject"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Authorization Type</p>
+                      <p className="text-gray-900">
+                        {profile?.kyc_profile?.work_authorization_type || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Work Auth Verified</p>
+                      <p
+                        className={`font-medium ${
+                          profile?.kyc_profile?.work_authorization_verified
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {profile?.kyc_profile?.work_authorization_verified
+                          ? "Verified"
+                          : "Not Verified"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">EIN/TIN Number</p>
+                      <p className="text-gray-900">
+                        {profile?.kyc_profile?.ein_tin_number || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">SSN</p>
+                      <p className="text-gray-900">
+                        {profile?.kyc_profile?.ssn || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Permit Front</p>
+                      {profile?.kyc_profile?.work_permit_front ? (
+                        <button
+                          onClick={() =>
+                            handleViewImage(
+                              profile.kyc_profile!.work_permit_front!
+                            )
+                          }
+                          className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                        >
+                          View
+                        </button>
+                      ) : (
+                        <span className="text-gray-500">—</span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Permit Back</p>
+                      {profile?.kyc_profile?.work_permit_back ? (
+                        <button
+                          onClick={() =>
+                            handleViewImage(
+                              profile.kyc_profile!.work_permit_back!
+                            )
+                          }
+                          className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                        >
+                          View
+                        </button>
+                      ) : (
+                        <span className="text-gray-500">—</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Passport & Background
+                    </h3>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleKycVerification("passport", true)}
+                        disabled={verifying.passport !== null}
+                        className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {verifying.passport === "verify"
+                          ? "Verifying..."
+                          : "Verify"}
+                      </button>
+                      <button
+                        onClick={() => handleKycVerification("passport", false)}
+                        disabled={verifying.passport !== null}
+                        className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {verifying.passport === "reject"
+                          ? "Rejecting..."
+                          : "Reject"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Passport Verified</p>
+                      <p
+                        className={`font-medium ${
+                          profile?.kyc_profile?.passport_verified
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {profile?.kyc_profile?.passport_verified
+                          ? "Verified"
+                          : "Not Verified"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Allow Background Check</p>
+                      <p className="text-gray-900">
+                        {profile?.kyc_profile?.allow_background_check
+                          ? "Yes"
+                          : "No"}
+                      </p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-gray-500">Passport Photo</p>
+                      {profile?.kyc_profile?.passport_photo ? (
+                        <button
+                          onClick={() =>
+                            handleViewImage(
+                              profile.kyc_profile!.passport_photo!
+                            )
+                          }
+                          className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                        >
+                          View
+                        </button>
+                      ) : (
+                        <span className="text-gray-500">—</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -789,6 +1257,33 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
           profileImage: caregiver.profileImage,
         }}
       />
+
+      {/* Image Viewer Modal */}
+      <Modal
+        isOpen={imageViewerOpen}
+        onClose={() => setImageViewerOpen(false)}
+        size="lg"
+      >
+        <div className="p-4">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Document Viewer
+            </h3>
+          </div>
+          <div className="flex justify-center">
+            <img
+              src={viewingImageUrl}
+              alt="Document"
+              className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src =
+                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NjY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=";
+              }}
+            />
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

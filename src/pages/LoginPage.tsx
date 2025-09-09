@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useNavigate, Navigate } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../assets/illustration/logo.png";
 import loginImage from "../assets/images/login.jpg";
@@ -23,12 +24,9 @@ const schema = yup
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
-
-  // Redirect to dashboard if already authenticated
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  const { login, isAuthenticated, isLoading } = useAuth();
+  const [loginError, setLoginError] = useState<string>("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -38,14 +36,35 @@ const LoginPage = () => {
     resolver: yupResolver(schema),
   });
 
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-nunito">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to dashboard if already authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   const onSubmit = async (data: LoginFormData) => {
+    setLoginError("");
     try {
-      const success = await login(data.email, data.password);
-      if (success) {
+      const result = await login(data.email, data.password);
+      if (result.success) {
         navigate("/dashboard");
+      } else {
+        setLoginError(result.error || "Login failed");
       }
     } catch (error) {
       console.error("Login failed:", error);
+      setLoginError("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -73,6 +92,34 @@ const LoginPage = () => {
 
               {/* Login Form */}
               <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+                {/* Error Message */}
+                {loginError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-red-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-red-800 font-nunito">
+                          {loginError}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Email Field */}
                 <div>
                   <label
@@ -110,7 +157,7 @@ const LoginPage = () => {
                     <input
                       {...register("password")}
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-nunito pr-12 ${
                         errors.password ? "border-red-300" : "border-gray-300"
@@ -119,27 +166,44 @@ const LoginPage = () => {
                     />
                     <button
                       type="button"
+                      onClick={() => setShowPassword(!showPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     >
-                      <svg
-                        className="h-5 w-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
+                      {showPassword ? (
+                        <svg
+                          className="h-5 w-5 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="h-5 w-5 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          />
+                        </svg>
+                      )}
                     </button>
                   </div>
                   {errors.password && (
@@ -162,10 +226,10 @@ const LoginPage = () => {
                 {/* Login Button */}
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isLoading}
                   className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-nunito transition-colors duration-200"
                 >
-                  {isSubmitting ? "Logging in..." : "Login"}
+                  {isSubmitting || isLoading ? "Logging in..." : "Login"}
                 </button>
               </form>
             </div>

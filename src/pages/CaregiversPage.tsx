@@ -2,19 +2,34 @@ import { useState, useEffect, useRef } from "react";
 import Sidebar from "../components/Sidebar";
 import CaregiverProfileModal from "../components/CaregiverProfileModal";
 import EmailUserModal from "../components/EmailUserModal";
+import {
+  caregiversService,
+  type Caregiver,
+  type CaregiversQueryParams,
+  type CaregiverMetrics,
+} from "../services";
 
 const CaregiversPage = () => {
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [selectedCaregiverId, setSelectedCaregiverId] = useState<number | null>(
+  const [selectedCaregiverId, setSelectedCaregiverId] = useState<string | null>(
     null
   );
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [selectedCaregiverForEmail, setSelectedCaregiverForEmail] = useState<{
-    id: number;
+    id: string;
     name: string;
     email: string;
   } | null>(null);
+  const [caregivers, setCaregivers] = useState<Caregiver[]>([]);
+  const [metrics, setMetrics] = useState<CaregiverMetrics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCaregivers, setTotalCaregivers] = useState(0);
+  const [sortBy] = useState("created_at");
+  const [sortOrder] = useState<"ASC" | "DESC">("DESC");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,84 +48,109 @@ const CaregiversPage = () => {
     };
   }, []);
 
-  const handleActionClick = (caregiverId: number) => {
+  // Fetch caregivers data
+  useEffect(() => {
+    const fetchCaregivers = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+        const params: CaregiversQueryParams = {
+          page: currentPage,
+          limit: 10,
+          sortBy,
+          sortOrder,
+        };
+
+        const response = await caregiversService.getCaregivers(params);
+        if (response.success) {
+          setCaregivers(response.data.caregivers);
+          setMetrics(response.data.metrics);
+          setTotalPages(response.data.pagination.totalPages);
+          setTotalCaregivers(response.data.pagination.total);
+        } else {
+          setError(response.message || "Failed to load caregivers");
+        }
+      } catch (err) {
+        console.error("Caregivers fetch error:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load caregivers"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCaregivers();
+  }, [currentPage, sortBy, sortOrder]);
+
+  const handleActionClick = (caregiverId: string) => {
     setOpenDropdown(openDropdown === caregiverId ? null : caregiverId);
   };
 
-  const handleViewProfile = (caregiverId: number) => {
+  const handleViewProfile = (caregiverId: string) => {
     setSelectedCaregiverId(caregiverId);
     setIsProfileModalOpen(true);
     setOpenDropdown(null);
   };
 
-  const handleSendEmail = (caregiver: any) => {
+  const handleSendEmail = (caregiver: Caregiver) => {
     setSelectedCaregiverForEmail({
       id: caregiver.id,
-      name: caregiver.fullName,
+      name: caregiver.full_name,
       email: caregiver.email,
     });
     setIsEmailModalOpen(true);
     setOpenDropdown(null);
   };
 
-  const caregivers = [
-    {
-      id: 1,
-      fullName: "Denise Edwards",
-      email: "denise.edwards@example.com",
-      type: "Caregiver",
-      accountCreated: "07 June 2025",
-    },
-    {
-      id: 2,
-      fullName: "James Dean",
-      email: "james.dean@example.com",
-      type: "Caregiver",
-      accountCreated: "07 June 2025",
-    },
-    {
-      id: 3,
-      fullName: "Mary Jane",
-      email: "mary.jane@example.com",
-      type: "Caregiver",
-      accountCreated: "04 June 2025",
-    },
-    {
-      id: 4,
-      fullName: "Nischa Wraith",
-      email: "nischa.wraith@example.com",
-      type: "Caregiver",
-      accountCreated: "06 May 2025",
-    },
-    {
-      id: 5,
-      fullName: "Ina Padley",
-      email: "ina.padley@example.com",
-      type: "Caregiver",
-      accountCreated: "15 March 2025",
-    },
-    {
-      id: 6,
-      fullName: "Tom Welling",
-      email: "tom.welling@example.com",
-      type: "Caregiver",
-      accountCreated: "15 March 2025",
-    },
-    {
-      id: 7,
-      fullName: "Richard Banks",
-      email: "richard.banks@example.com",
-      type: "Caregiver",
-      accountCreated: "15 March 2025",
-    },
-    {
-      id: 8,
-      fullName: "Heather Seth",
-      email: "heather.seth@example.com",
-      type: "Caregiver",
-      accountCreated: "11 March 2025",
-    },
-  ];
+  if (isLoading) {
+    return (
+      <div className="flex h-screen bg-gray-50 font-nunito">
+        <Sidebar activePage="Care givers" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading caregivers...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen bg-gray-50 font-nunito">
+        <Sidebar activePage="Care givers" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Error</h3>
+                  <p className="text-sm text-red-700 mt-1">{error}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 font-nunito" ref={dropdownRef}>
@@ -161,22 +201,19 @@ const CaregiversPage = () => {
               <h3 className="text-sm font-medium text-gray-600 mb-2">
                 Total Caregivers
               </h3>
-              <p className="text-3xl font-bold text-gray-900 mb-2">1,204</p>
-              <div className="flex items-center text-green-600 text-sm">
-                <svg
-                  className="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 10l7-7m0 0l7 7m-7-7v18"
-                  />
-                </svg>
-                +120 more caregivers than last week
+              <p className="text-3xl font-bold text-gray-900 mb-2">
+                {metrics?.totalCaregivers.value.toLocaleString() || "0"}
+              </p>
+              <div
+                className={`flex items-center text-sm ${
+                  metrics?.totalCaregivers.changeType === "positive"
+                    ? "text-green-600"
+                    : metrics?.totalCaregivers.changeType === "negative"
+                    ? "text-red-600"
+                    : "text-gray-600"
+                }`}
+              >
+                {metrics?.totalCaregivers.change || "No change"}
               </div>
             </div>
 
@@ -185,9 +222,19 @@ const CaregiversPage = () => {
               <h3 className="text-sm font-medium text-gray-600 mb-2">
                 Verified Caregivers
               </h3>
-              <p className="text-3xl font-bold text-gray-900 mb-2">980</p>
-              <div className="text-red-600 text-sm">
-                224 Pending verification
+              <p className="text-3xl font-bold text-gray-900 mb-2">
+                {metrics?.verifiedCaregivers.value.toLocaleString() || "0"}
+              </p>
+              <div
+                className={`flex items-center text-sm mt-1 ${
+                  metrics?.verifiedCaregivers.changeType === "positive"
+                    ? "text-green-600"
+                    : metrics?.verifiedCaregivers.changeType === "negative"
+                    ? "text-red-600"
+                    : "text-gray-600"
+                }`}
+              >
+                {metrics?.verifiedCaregivers.change || "No change"}
               </div>
             </div>
 
@@ -196,22 +243,21 @@ const CaregiversPage = () => {
               <h3 className="text-sm font-medium text-gray-600 mb-2">
                 Caregivers with Active Jobs
               </h3>
-              <p className="text-3xl font-bold text-gray-900 mb-2">945</p>
-              <div className="flex items-center text-green-600 text-sm">
-                <svg
-                  className="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 10l7-7m0 0l7 7m-7-7v18"
-                  />
-                </svg>
-                +45 more caregivers than last week
+              <p className="text-3xl font-bold text-gray-900 mb-2">
+                {metrics?.caregiversWithActiveJobs.value.toLocaleString() ||
+                  "0"}
+              </p>
+              <div
+                className={`flex items-center text-sm ${
+                  metrics?.caregiversWithActiveJobs.changeType === "positive"
+                    ? "text-green-600"
+                    : metrics?.caregiversWithActiveJobs.changeType ===
+                      "negative"
+                    ? "text-red-600"
+                    : "text-gray-600"
+                }`}
+              >
+                {metrics?.caregiversWithActiveJobs.change || "No change"}
               </div>
             </div>
           </div>
@@ -328,7 +374,7 @@ const CaregiversPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {caregiver.fullName}
+                          {caregiver.full_name}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -342,7 +388,9 @@ const CaregiversPage = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {caregiver.accountCreated}
+                        {new Date(
+                          caregiver.account_created
+                        ).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="relative">
@@ -416,10 +464,16 @@ const CaregiversPage = () => {
             <div className="px-6 py-3 border-t border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  Showing 1-20 of 2,209
+                  Showing {(currentPage - 1) * 10 + 1}-
+                  {Math.min(currentPage * 10, totalCaregivers)} of{" "}
+                  {totalCaregivers.toLocaleString()}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <svg
                       className="w-4 h-4"
                       fill="none"
@@ -435,21 +489,15 @@ const CaregiversPage = () => {
                     </svg>
                   </button>
                   <button className="px-3 py-1 text-sm bg-blue-600 text-white rounded">
-                    1
+                    {currentPage}
                   </button>
-                  <button className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">
-                    2
-                  </button>
-                  <button className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">
-                    3
-                  </button>
-                  <button className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">
-                    4
-                  </button>
-                  <button className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded">
-                    5
-                  </button>
-                  <button className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">
+                  <button
+                    onClick={() =>
+                      setCurrentPage(Math.min(totalPages, currentPage + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <svg
                       className="w-4 h-4"
                       fill="none"
