@@ -105,7 +105,7 @@ const CaregiversPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-gray-50 font-nunito">
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-nunito">
         <Sidebar activePage="Care givers" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -119,7 +119,7 @@ const CaregiversPage = () => {
 
   if (error) {
     return (
-      <div className="flex h-screen bg-gray-50 font-nunito">
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-nunito">
         <Sidebar activePage="Care givers" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -153,26 +153,31 @@ const CaregiversPage = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 font-nunito" ref={dropdownRef}>
+    <div
+      className="flex h-screen bg-gray-50 dark:bg-gray-900 font-nunito"
+      ref={dropdownRef}
+    >
       <Sidebar activePage="Care givers" />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900">Care givers</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Care givers
+              </h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Search"
-                  className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-64 pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <svg
-                  className="absolute left-3 top-2.5 w-5 h-5 text-gray-400"
+                  className="absolute left-3 top-2.5 w-5 h-5 text-gray-400 dark:text-gray-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -197,11 +202,11 @@ const CaregiversPage = () => {
           {/* Top Row Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Total Caregivers */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <h3 className="text-sm font-medium text-gray-600 mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Total Caregivers
               </h3>
-              <p className="text-3xl font-bold text-gray-900 mb-2">
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {metrics?.totalCaregivers.value.toLocaleString() || "0"}
               </p>
               <div
@@ -218,11 +223,11 @@ const CaregiversPage = () => {
             </div>
 
             {/* Verified Caregivers */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <h3 className="text-sm font-medium text-gray-600 mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Verified Caregivers
               </h3>
-              <p className="text-3xl font-bold text-gray-900 mb-2">
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {metrics?.verifiedCaregivers.value.toLocaleString() || "0"}
               </p>
               <div
@@ -239,11 +244,11 @@ const CaregiversPage = () => {
             </div>
 
             {/* Caregivers with Active Jobs */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <h3 className="text-sm font-medium text-gray-600 mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Caregivers with Active Jobs
               </h3>
-              <p className="text-3xl font-bold text-gray-900 mb-2">
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {metrics?.caregiversWithActiveJobs.value.toLocaleString() ||
                   "0"}
               </p>
@@ -270,7 +275,7 @@ const CaregiversPage = () => {
                   Verified Caregivers
                 </h3>
                 <div className="flex items-center space-x-3">
-                  <button className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                  <button className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <svg
                       className="w-4 h-4 mr-2"
                       fill="none"
@@ -286,7 +291,7 @@ const CaregiversPage = () => {
                     </svg>
                     Sort
                   </button>
-                  <button className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                  <button className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <svg
                       className="w-4 h-4 mr-2"
                       fill="none"
@@ -323,7 +328,7 @@ const CaregiversPage = () => {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-6 py-3 text-left">
                       <input
@@ -331,7 +336,7 @@ const CaregiversPage = () => {
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       <div className="flex items-center space-x-1">
                         <span>Full Name</span>
                         <svg
@@ -349,23 +354,26 @@ const CaregiversPage = () => {
                         </svg>
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Email Address
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Account Created
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Action
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {caregivers.map((caregiver) => (
-                    <tr key={caregiver.id} className="hover:bg-gray-50">
+                    <tr
+                      key={caregiver.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
@@ -373,12 +381,12 @@ const CaregiversPage = () => {
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
                           {caregiver.full_name}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
+                        <div className="text-sm text-gray-900 dark:text-gray-300">
                           {caregiver.email}
                         </div>
                       </td>
@@ -387,7 +395,7 @@ const CaregiversPage = () => {
                           {caregiver.type}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
                         {new Date(
                           caregiver.account_created
                         ).toLocaleDateString()}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Modal from "./Modal";
+import { emailService } from "../services";
 
 interface EmailUserModalProps {
   isOpen: boolean;
@@ -9,26 +10,62 @@ interface EmailUserModalProps {
     email: string;
     profileImage?: string;
   };
+  onEmailSent?: () => void;
 }
 
 const EmailUserModal: React.FC<EmailUserModalProps> = ({
   isOpen,
   onClose,
   recipient,
+  onEmailSent,
 }) => {
-  const [subject, setSubject] = useState("Welcome to Tendaly");
+  const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSendEmail = () => {
-    console.log("Sending email to:", recipient.email);
-    console.log("Subject:", subject);
-    console.log("Content:", content);
-    onClose();
+  const handleSendEmail = async () => {
+    if (!subject.trim() || !content.trim()) {
+      setError("Please fill in both subject and content");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await emailService.sendEmail({
+        recipient_email: recipient.email,
+        title: subject,
+        body: content,
+      });
+
+      if (response.success) {
+        // Reset form
+        setSubject("");
+        setContent("");
+
+        // Call callback if provided
+        if (onEmailSent) {
+          onEmailSent();
+        }
+
+        onClose();
+      } else {
+        setError(response.message || "Failed to send email");
+      }
+    } catch (err) {
+      console.error("Error sending email:", err);
+      setError("Failed to send email. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCancel = () => {
-    setSubject("Welcome to Tendaly");
+    setSubject("");
     setContent("");
+    setError(null);
     onClose();
   };
 
@@ -37,8 +74,39 @@ const EmailUserModal: React.FC<EmailUserModalProps> = ({
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Email User</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Email User
+          </h2>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-red-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                  Error
+                </h3>
+                <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                  <p>{error}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Recipient Field */}
         <div className="mb-6">
@@ -61,27 +129,8 @@ const EmailUserModal: React.FC<EmailUserModalProps> = ({
               <span className="text-sm font-medium text-blue-800">
                 {recipient.name}
               </span>
-              <button className="text-blue-600 hover:text-blue-800">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+              <span className="text-sm text-blue-600">({recipient.email})</span>
             </div>
-            <input
-              type="text"
-              placeholder="Type a name or e-mail address"
-              className="flex-1 border-none bg-transparent focus:outline-none text-sm"
-            />
           </div>
         </div>
 
@@ -101,132 +150,166 @@ const EmailUserModal: React.FC<EmailUserModalProps> = ({
         {/* Rich Text Editor */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Rich Text
+            Email Body (HTML)
           </label>
 
           {/* Toolbar */}
           <div className="border border-gray-300 rounded-t-lg bg-gray-50 p-2 flex items-center space-x-1">
-            {/* Undo/Redo */}
-            <button className="p-2 hover:bg-gray-200 rounded">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-                />
-              </svg>
+            {/* Bold */}
+            <button
+              type="button"
+              onClick={() => {
+                const textarea = document.getElementById(
+                  "email-body"
+                ) as HTMLTextAreaElement;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = content.substring(start, end);
+                const newText =
+                  content.substring(0, start) +
+                  `<strong>${selectedText}</strong>` +
+                  content.substring(end);
+                setContent(newText);
+              }}
+              className="p-2 hover:bg-gray-200 rounded font-bold"
+              title="Bold"
+            >
+              B
             </button>
-            <button className="p-2 hover:bg-gray-200 rounded">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 14h-10a8 8 0 01-8-8v-2M21 14l-6-6m6 6l-6 6"
-                />
-              </svg>
+
+            {/* Italic */}
+            <button
+              type="button"
+              onClick={() => {
+                const textarea = document.getElementById(
+                  "email-body"
+                ) as HTMLTextAreaElement;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = content.substring(start, end);
+                const newText =
+                  content.substring(0, start) +
+                  `<em>${selectedText}</em>` +
+                  content.substring(end);
+                setContent(newText);
+              }}
+              className="p-2 hover:bg-gray-200 rounded italic"
+              title="Italic"
+            >
+              I
+            </button>
+
+            {/* Underline */}
+            <button
+              type="button"
+              onClick={() => {
+                const textarea = document.getElementById(
+                  "email-body"
+                ) as HTMLTextAreaElement;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = content.substring(start, end);
+                const newText =
+                  content.substring(0, start) +
+                  `<u>${selectedText}</u>` +
+                  content.substring(end);
+                setContent(newText);
+              }}
+              className="p-2 hover:bg-gray-200 rounded underline"
+              title="Underline"
+            >
+              U
             </button>
 
             <div className="w-px h-6 bg-gray-300 mx-2"></div>
 
             {/* Headings */}
-            <button className="px-3 py-1 text-sm font-medium hover:bg-gray-200 rounded">
+            <button
+              type="button"
+              onClick={() => {
+                const textarea = document.getElementById(
+                  "email-body"
+                ) as HTMLTextAreaElement;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = content.substring(start, end);
+                const newText =
+                  content.substring(0, start) +
+                  `<h1>${selectedText}</h1>` +
+                  content.substring(end);
+                setContent(newText);
+              }}
+              className="px-3 py-1 text-sm font-medium hover:bg-gray-200 rounded"
+              title="Heading 1"
+            >
               H1
             </button>
-            <button className="px-3 py-1 text-sm font-medium hover:bg-gray-200 rounded">
+            <button
+              type="button"
+              onClick={() => {
+                const textarea = document.getElementById(
+                  "email-body"
+                ) as HTMLTextAreaElement;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = content.substring(start, end);
+                const newText =
+                  content.substring(0, start) +
+                  `<h2>${selectedText}</h2>` +
+                  content.substring(end);
+                setContent(newText);
+              }}
+              className="px-3 py-1 text-sm font-medium hover:bg-gray-200 rounded"
+              title="Heading 2"
+            >
               H2
             </button>
 
             <div className="w-px h-6 bg-gray-300 mx-2"></div>
 
-            {/* Text Styling */}
-            <button className="p-2 hover:bg-gray-200 rounded font-bold">
-              B
-            </button>
-            <button className="p-2 hover:bg-gray-200 rounded underline">
-              U
-            </button>
-            <button className="p-2 hover:bg-gray-200 rounded italic">I</button>
-
-            <div className="w-px h-6 bg-gray-300 mx-2"></div>
-
-            {/* Text Alignment */}
-            <button className="p-2 hover:bg-gray-200 rounded">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
-            <button className="p-2 hover:bg-gray-200 rounded">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h8M4 18h8"
-                />
-              </svg>
-            </button>
-            <button className="p-2 hover:bg-gray-200 rounded">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h12M4 18h12"
-                />
-              </svg>
-            </button>
-            <button className="p-2 hover:bg-gray-200 rounded">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+            {/* Paragraph */}
+            <button
+              type="button"
+              onClick={() => {
+                const textarea = document.getElementById(
+                  "email-body"
+                ) as HTMLTextAreaElement;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = content.substring(start, end);
+                const newText =
+                  content.substring(0, start) +
+                  `<p>${selectedText}</p>` +
+                  content.substring(end);
+                setContent(newText);
+              }}
+              className="px-3 py-1 text-sm font-medium hover:bg-gray-200 rounded"
+              title="Paragraph"
+            >
+              P
             </button>
 
             <div className="w-px h-6 bg-gray-300 mx-2"></div>
 
             {/* Lists */}
-            <button className="p-2 hover:bg-gray-200 rounded">
+            <button
+              type="button"
+              onClick={() => {
+                const textarea = document.getElementById(
+                  "email-body"
+                ) as HTMLTextAreaElement;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = content.substring(start, end);
+                const newText =
+                  content.substring(0, start) +
+                  `<ul><li>${selectedText}</li></ul>` +
+                  content.substring(end);
+                setContent(newText);
+              }}
+              className="p-2 hover:bg-gray-200 rounded"
+              title="Bullet List"
+            >
               <svg
                 className="w-4 h-4"
                 fill="none"
@@ -241,7 +324,24 @@ const EmailUserModal: React.FC<EmailUserModalProps> = ({
                 />
               </svg>
             </button>
-            <button className="p-2 hover:bg-gray-200 rounded">
+            <button
+              type="button"
+              onClick={() => {
+                const textarea = document.getElementById(
+                  "email-body"
+                ) as HTMLTextAreaElement;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = content.substring(start, end);
+                const newText =
+                  content.substring(0, start) +
+                  `<ol><li>${selectedText}</li></ol>` +
+                  content.substring(end);
+                setContent(newText);
+              }}
+              className="p-2 hover:bg-gray-200 rounded"
+              title="Numbered List"
+            >
               <svg
                 className="w-4 h-4"
                 fill="none"
@@ -259,8 +359,29 @@ const EmailUserModal: React.FC<EmailUserModalProps> = ({
 
             <div className="w-px h-6 bg-gray-300 mx-2"></div>
 
-            {/* Media */}
-            <button className="p-2 hover:bg-gray-200 rounded">
+            {/* Link */}
+            <button
+              type="button"
+              onClick={() => {
+                const url = prompt("Enter URL:");
+                if (url) {
+                  const textarea = document.getElementById(
+                    "email-body"
+                  ) as HTMLTextAreaElement;
+                  const start = textarea.selectionStart;
+                  const end = textarea.selectionEnd;
+                  const selectedText = content.substring(start, end);
+                  const linkText = selectedText || url;
+                  const newText =
+                    content.substring(0, start) +
+                    `<a href="${url}">${linkText}</a>` +
+                    content.substring(end);
+                  setContent(newText);
+                }
+              }}
+              className="p-2 hover:bg-gray-200 rounded"
+              title="Insert Link"
+            >
               <svg
                 className="w-4 h-4"
                 fill="none"
@@ -275,45 +396,49 @@ const EmailUserModal: React.FC<EmailUserModalProps> = ({
                 />
               </svg>
             </button>
-            <button className="p-2 hover:bg-gray-200 rounded">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </button>
           </div>
 
           {/* Text Area */}
           <textarea
+            id="email-body"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Text Hint"
-            className="w-full h-64 p-4 border border-gray-300 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            placeholder="Enter your email content here. Use the toolbar above to format text with HTML."
+            className="w-full h-64 p-4 border border-gray-300 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none font-mono text-sm"
           />
+
+          {/* HTML Preview */}
+          {content && (
+            <div className="mt-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Preview:
+              </label>
+              <div
+                className="w-full p-4 border border-gray-200 rounded-lg bg-gray-50 min-h-20"
+                dangerouslySetInnerHTML={{ __html: content }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between">
           <button
             onClick={handleCancel}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            disabled={isLoading}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel & Discard changes
           </button>
           <button
             onClick={handleSendEmail}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            disabled={isLoading}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
           >
-            Send Email
+            {isLoading && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            )}
+            <span>{isLoading ? "Sending..." : "Send Email"}</span>
           </button>
         </div>
       </div>

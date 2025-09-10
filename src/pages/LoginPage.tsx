@@ -4,6 +4,7 @@ import * as yup from "yup";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import DarkModeToggle from "../components/DarkModeToggle";
 import logo from "../assets/illustration/logo.png";
 import loginImage from "../assets/images/login.jpg";
 
@@ -39,7 +40,7 @@ const LoginPage = () => {
   // Show loading while checking authentication
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 font-nunito">Loading...</p>
@@ -71,21 +72,22 @@ const LoginPage = () => {
   return (
     <div className="h-screen flex overflow-hidden relative">
       {/* Left Panel - Login Form */}
-      <div className="w-1/2 bg-gray-50 flex flex-col relative">
+      <div className="w-1/2 bg-gray-50 dark:bg-gray-800 flex flex-col relative">
         {/* Login Form Container */}
         <div className="flex-1 flex items-center justify-center px-16">
           <div className="w-full max-w-md">
             {/* Login Card */}
-            <div className="mb-8">
+            <div className="mb-8 flex items-center justify-between">
               <img src={logo} alt="Tendaly Logo" className="h-8" />
+              <DarkModeToggle />
             </div>
-            <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="bg-white dark:bg-gray-700 rounded-2xl shadow-lg p-8">
               {/* Welcome Text */}
               <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 font-nunito mb-2">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white font-nunito mb-2">
                   Welcome back!
                 </h1>
-                <p className="text-gray-600 font-nunito">
+                <p className="text-gray-600 dark:text-gray-300 font-nunito">
                   Please login using your account
                 </p>
               </div>

@@ -56,23 +56,25 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 font-nunito">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-nunito">
       <Sidebar activePage="Settings" />
 
       <main className="flex-1 overflow-y-auto p-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Settings
+          </h1>
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 mb-8 border-b border-gray-200">
+        <div className="flex space-x-1 mb-8 border-b border-gray-200 dark:border-gray-700">
           <button
             onClick={() => setActiveTab("Manage Profile")}
             className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors ${
               activeTab === "Manage Profile"
-                ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                ? "bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
             }`}
           >
             Manage Profile
@@ -81,8 +83,8 @@ const SettingsPage = () => {
             onClick={() => setActiveTab("Password Settings")}
             className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors ${
               activeTab === "Password Settings"
-                ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                ? "bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
             }`}
           >
             Password Settings
@@ -93,7 +95,7 @@ const SettingsPage = () => {
         {activeTab === "Manage Profile" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column - User Information Form */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
                 Profile Information
               </h3>
@@ -163,7 +165,7 @@ const SettingsPage = () => {
             </div>
 
             {/* Right Column - Profile Picture Management */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
                 Profile Picture
               </h3>
@@ -188,7 +190,7 @@ const SettingsPage = () => {
 
         {activeTab === "Password Settings" && (
           <div className="max-w-md">
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
                 Change Password
               </h3>

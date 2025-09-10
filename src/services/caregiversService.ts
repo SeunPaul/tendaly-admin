@@ -202,6 +202,10 @@ export interface KycVerificationResponse {
 }
 
 class CaregiversService extends BaseApiService {
+  constructor() {
+    super(API_BASE_URL);
+  }
+
   async getCaregivers(
     params: CaregiversQueryParams = {}
   ): Promise<CaregiversResponse> {
@@ -259,4 +263,4 @@ class CaregiversService extends BaseApiService {
   }
 }
 
-export const caregiversService = new CaregiversService(API_BASE_URL);
+export const caregiversService = new CaregiversService();

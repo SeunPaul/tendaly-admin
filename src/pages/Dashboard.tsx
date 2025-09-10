@@ -154,23 +154,23 @@ const Dashboard = () => {
     );
   }
   return (
-    <div className="flex h-screen bg-gray-50 font-nunito">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-nunito">
       <Sidebar activePage="Dashboard" />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 max-w-md">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Search"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <svg
-                  className="absolute left-3 top-2.5 w-5 h-5 text-gray-400"
+                  className="absolute left-3 top-2.5 w-5 h-5 text-gray-400 dark:text-gray-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -194,16 +194,18 @@ const Dashboard = () => {
 
         {/* Dashboard Content */}
         <main className="flex-1 overflow-y-auto p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+            Dashboard
+          </h1>
 
           {/* Top Row Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Total Caregivers */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <h3 className="text-sm font-medium text-gray-600 mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Total Caregivers
               </h3>
-              <p className="text-3xl font-bold text-gray-900 mb-2">
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {dashboardData.totalCaregivers.value.toLocaleString()}
               </p>
               <div
@@ -217,11 +219,11 @@ const Dashboard = () => {
             </div>
 
             {/* Bookings */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <h3 className="text-sm font-medium text-gray-600 mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Bookings
               </h3>
-              <p className="text-3xl font-bold text-gray-900 mb-2">
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {dashboardData.bookings.value.toLocaleString()}
               </p>
               <div
@@ -235,11 +237,11 @@ const Dashboard = () => {
             </div>
 
             {/* Total Revenue */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <h3 className="text-sm font-medium text-gray-600 mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Total Revenue
               </h3>
-              <p className="text-3xl font-bold text-gray-900 mb-2">
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {formatCurrency(dashboardData.totalRevenue.value)}
               </p>
               <div
@@ -257,11 +259,11 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             {/* Left Column - User Stats */}
             <div className="space-y-6">
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                   Total Users
                 </h3>
-                <p className="text-3xl font-bold text-gray-900 mb-2">
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                   {dashboardData.totalUsers.value.toLocaleString()}
                 </p>
                 <div
@@ -274,11 +276,11 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                   Active Users
                 </h3>
-                <p className="text-3xl font-bold text-gray-900 mb-2">
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                   {dashboardData.activeUsers.value.toLocaleString()}
                 </p>
                 <div
@@ -291,11 +293,11 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                   Deactivated Accounts
                 </h3>
-                <p className="text-3xl font-bold text-gray-900 mb-2">
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                   {dashboardData.deactivatedAccounts.value.toLocaleString()}
                 </p>
                 <div
@@ -310,8 +312,8 @@ const Dashboard = () => {
             </div>
 
             {/* Right Column - Donut Chart */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                 User Type Distribution
               </h3>
               <div className="flex items-center justify-center">
@@ -368,10 +370,12 @@ const Dashboard = () => {
                   {/* Center content */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">
                         {dashboardData.userTypeDistribution.totalUsers.toLocaleString()}
                       </div>
-                      <div className="text-sm text-gray-600">Total Users</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">
+                        Total Users
+                      </div>
                     </div>
                   </div>
                   {/* Chart Legend */}
@@ -379,14 +383,14 @@ const Dashboard = () => {
                     <div className="flex items-center justify-center space-x-6">
                       <div className="flex items-center space-x-2">
                         <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
                           {dashboardData.userTypeDistribution.caregivers.toLocaleString()}{" "}
                           Caregivers
                         </span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <div className="w-4 h-4 bg-pink-500 rounded-full"></div>
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
                           {dashboardData.userTypeDistribution.careseekers.toLocaleString()}{" "}
                           Careseekers
                         </span>

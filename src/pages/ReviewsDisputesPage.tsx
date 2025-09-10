@@ -326,12 +326,15 @@ const ReviewsDisputesPage = () => {
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex h-screen bg-gray-50 font-nunito" ref={dropdownRef}>
+    <div
+      className="flex h-screen bg-gray-50 dark:bg-gray-900 font-nunito"
+      ref={dropdownRef}
+    >
       <Sidebar activePage="Reviews & Disputes" />
       <main className="flex-1 overflow-y-auto p-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Reviews & Disputes
           </h1>
         </div>
@@ -443,11 +446,11 @@ const ReviewsDisputesPage = () => {
         </div>
 
         {/* Data Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             {activeTab === "Reviews" ? (
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-6 py-3 text-left">
                       <div className="flex items-center space-x-2">
@@ -473,9 +476,12 @@ const ReviewsDisputesPage = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {reviews.map((review) => (
-                    <tr key={review.id} className="hover:bg-gray-50">
+                    <tr
+                      key={review.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
@@ -623,7 +629,7 @@ const ReviewsDisputesPage = () => {
               </table>
             ) : (
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-6 py-3 text-left">
                       <div className="flex items-center space-x-2">
@@ -652,9 +658,12 @@ const ReviewsDisputesPage = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {disputes.map((dispute) => (
-                    <tr key={dispute.id} className="hover:bg-gray-50">
+                    <tr
+                      key={dispute.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"

@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import DarkModeToggle from "./DarkModeToggle";
 import logo from "../assets/illustration/logo.png";
 
 interface SidebarProps {
@@ -8,7 +9,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activePage }) => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, isSuperAdmin } = useAuth();
 
   const navigationItems = [
     { name: "Dashboard", icon: "grid", path: "/dashboard" },
@@ -20,7 +21,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage }) => {
   ];
 
   const adminItems = [
-    { name: "Manage Admins", icon: "person", path: "/manage-admins" },
+    ...(isSuperAdmin()
+      ? [{ name: "Manage Admins", icon: "person", path: "/manage-admins" }]
+      : []),
     { name: "Settings", icon: "gear", path: "/settings" },
     {
       name: "Logout",
@@ -158,26 +161,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage }) => {
   };
 
   return (
-    <div className="w-64 bg-white shadow-lg">
+    <div className="w-64 bg-white dark:bg-gray-800 shadow-lg">
       {/* Logo and Menu */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <img src={logo} alt="Tendaly Logo" className="h-8" />
-          <button className="p-2 rounded-lg hover:bg-gray-100">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
+          <div className="flex items-center space-x-2">
+            <DarkModeToggle />
+          </div>
         </div>
       </div>
 
@@ -194,8 +185,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage }) => {
                 }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                   activePage === item.name
-                    ? "bg-blue-50 text-blue-600 border border-blue-200"
-                    : "text-gray-700 hover:bg-gray-50"
+                    ? "bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 }`}
               >
                 {getIcon(item.icon)}
@@ -207,7 +198,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage }) => {
       </nav>
 
       {/* Admin Section */}
-      <div className="mt-8 p-4 border-t border-gray-200">
+      <div className="mt-8 p-4 border-t border-gray-200 dark:border-gray-700">
         <ul className="space-y-2">
           {adminItems.map((item) => (
             <li key={item.name}>
@@ -221,8 +212,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage }) => {
                 }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                   activePage === item.name
-                    ? "bg-blue-50 text-blue-600 border border-blue-200"
-                    : "text-gray-700 hover:bg-gray-50"
+                    ? "bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 }`}
               >
                 {getIcon(item.icon)}

@@ -29,6 +29,10 @@ export interface DashboardResponse {
 }
 
 class DashboardService extends BaseApiService {
+  constructor() {
+    super(API_BASE_URL);
+  }
+
   async getDashboard(): Promise<DashboardResponse> {
     return this.request<DashboardResponse>("/admin/dashboard", {
       method: "GET",
@@ -36,4 +40,4 @@ class DashboardService extends BaseApiService {
   }
 }
 
-export const dashboardService = new DashboardService(API_BASE_URL);
+export const dashboardService = new DashboardService();

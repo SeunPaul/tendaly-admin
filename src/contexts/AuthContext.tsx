@@ -27,6 +27,8 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   refreshProfile: () => Promise<void>;
+  isSuperAdmin: () => boolean;
+  hasRole: (role: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -132,6 +134,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
   };
 
+  const isSuperAdmin = (): boolean => {
+    return user?.role === "super_admin";
+  };
+
+  const hasRole = (role: string): boolean => {
+    return user?.role === role;
+  };
+
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
@@ -139,6 +149,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isLoading,
     refreshProfile,
+    isSuperAdmin,
+    hasRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

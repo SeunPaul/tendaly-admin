@@ -33,6 +33,10 @@ export interface LoginResponse {
 }
 
 class AuthService extends BaseApiService {
+  constructor() {
+    super(API_BASE_URL);
+  }
+
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     return this.request<LoginResponse>("/admin/login", {
       method: "POST",
@@ -47,4 +51,4 @@ class AuthService extends BaseApiService {
   }
 }
 
-export const authService = new AuthService(API_BASE_URL);
+export const authService = new AuthService();
