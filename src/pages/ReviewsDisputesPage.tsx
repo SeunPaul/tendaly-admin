@@ -346,7 +346,7 @@ const ReviewsDisputesPage = () => {
             className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors ${
               activeTab === "Reviews"
                 ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
             }`}
           >
             Reviews
@@ -356,7 +356,7 @@ const ReviewsDisputesPage = () => {
             className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors ${
               activeTab === "Disputes"
                 ? "bg-blue-50 text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
             }`}
           >
             Disputes
@@ -365,14 +365,14 @@ const ReviewsDisputesPage = () => {
 
         {/* Pagination Summary and Controls */}
         <div className="flex items-center justify-between mb-6">
-          <div className="text-sm text-gray-700">
+          <div className="text-sm text-gray-700 dark:text-gray-300">
             Showing {startItem}-{endItem} of {totalItems}
           </div>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className="p-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-4 h-4"
@@ -397,7 +397,7 @@ const ReviewsDisputesPage = () => {
                   className={`px-3 py-2 rounded-lg text-sm font-medium ${
                     currentPage === pageNum
                       ? "bg-blue-600 text-white"
-                      : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      : "border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
                 >
                   {pageNum}
@@ -414,7 +414,7 @@ const ReviewsDisputesPage = () => {
                   className={`px-3 py-2 rounded-lg text-sm font-medium ${
                     currentPage === totalPages
                       ? "bg-blue-600 text-white"
-                      : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      : "border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
                 >
                   {totalPages}
@@ -426,7 +426,7 @@ const ReviewsDisputesPage = () => {
                 setCurrentPage(Math.min(totalPages, currentPage + 1))
               }
               disabled={currentPage === totalPages}
-              className="p-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-4 h-4"
@@ -505,7 +505,7 @@ const ReviewsDisputesPage = () => {
                             </div>
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
                               {review.userName}
                             </div>
                             <div className="text-sm text-gray-500">
@@ -527,7 +527,7 @@ const ReviewsDisputesPage = () => {
                             </div>
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
                               {review.givenToName}
                             </div>
                             <div className="text-sm text-gray-500">
@@ -687,7 +687,7 @@ const ReviewsDisputesPage = () => {
                             </div>
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
                               {dispute.userName}
                             </div>
                             <div className="text-sm text-gray-500">
@@ -709,7 +709,7 @@ const ReviewsDisputesPage = () => {
                             </div>
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
                               {dispute.reportedByName}
                             </div>
                             <div className="text-sm text-gray-500">

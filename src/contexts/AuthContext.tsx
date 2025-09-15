@@ -6,6 +6,10 @@ import React, {
   type ReactNode,
 } from "react";
 import { authService, type Admin } from "../services";
+import {
+  setGlobalLogoutHandler,
+  clearGlobalLogoutHandler,
+} from "../services/baseApi";
 
 interface User {
   id: string;
@@ -65,6 +69,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     initializeAuth();
+  }, []);
+
+  // Register global logout handler
+  useEffect(() => {
+    setGlobalLogoutHandler(logout);
+
+    // Cleanup function to remove the handler when component unmounts
+    return () => {
+      clearGlobalLogoutHandler();
+    };
   }, []);
 
   const refreshProfile = async (): Promise<void> => {

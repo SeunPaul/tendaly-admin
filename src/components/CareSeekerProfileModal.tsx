@@ -26,6 +26,15 @@ const CareSeekerProfileModal: React.FC<CareSeekerProfileModalProps> = ({
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string>("");
+  const [verifying, setVerifying] = useState<{
+    [key: string]: "verify" | "reject" | null;
+  }>({
+    valid_id: null,
+    work_authorization: null,
+    passport: null,
+  });
 
   useEffect(() => {
     if (isOpen && careSeekerId) {
@@ -74,6 +83,58 @@ const CareSeekerProfileModal: React.FC<CareSeekerProfileModalProps> = ({
       month: "short",
       day: "numeric",
     });
+  };
+
+  const handleViewImage = (imageUrl: string) => {
+    setViewingImageUrl(imageUrl);
+    setImageViewerOpen(true);
+  };
+
+  const handleKycVerification = async (
+    type: "valid_id" | "work_authorization" | "passport",
+    verified: boolean
+  ) => {
+    if (!careSeeker?.id) return;
+
+    const action = verified ? "verify" : "reject";
+    setVerifying((prev) => ({ ...prev, [type]: action }));
+    try {
+      let response;
+      switch (type) {
+        case "valid_id":
+          response = await careSeekersService.verifyValidId(
+            careSeeker.id,
+            verified
+          );
+          break;
+        case "work_authorization":
+          response = await careSeekersService.verifyWorkAuthorization(
+            careSeeker.id,
+            verified
+          );
+          break;
+        case "passport":
+          response = await careSeekersService.verifyPassport(
+            careSeeker.id,
+            verified
+          );
+          break;
+      }
+
+      if (response.success) {
+        // Refresh the profile data to get updated verification status
+        await fetchCareSeekerProfile();
+      }
+    } catch (err) {
+      console.error(`${type} verification error:`, err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Failed to ${verified ? "verify" : "reject"} ${type}`
+      );
+    } finally {
+      setVerifying((prev) => ({ ...prev, [type]: null }));
+    }
   };
 
   return (
@@ -413,151 +474,303 @@ const CareSeekerProfileModal: React.FC<CareSeekerProfileModalProps> = ({
                   <div className="space-y-6">
                     {kycProfile ? (
                       <>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Valid ID Type
-                          </label>
-                          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <span className="text-gray-900 dark:text-white capitalize">
-                              {kycProfile.valid_id_type.replace("_", " ")}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-6">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Valid ID Front
-                            </label>
-                            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              {kycProfile.valid_id_front_url ? (
-                                <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                                  View Document
-                                </button>
-                              ) : (
-                                <span className="text-gray-500 dark:text-gray-400">
-                                  Not provided
-                                </span>
-                              )}
+                        {/* Valid ID Section */}
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                          <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                              Valid ID
+                            </h3>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() =>
+                                  handleKycVerification("valid_id", true)
+                                }
+                                disabled={verifying.valid_id !== null}
+                                className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {verifying.valid_id === "verify"
+                                  ? "Verifying..."
+                                  : "Verify"}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleKycVerification("valid_id", false)
+                                }
+                                disabled={verifying.valid_id !== null}
+                                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {verifying.valid_id === "reject"
+                                  ? "Rejecting..."
+                                  : "Reject"}
+                              </button>
                             </div>
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Valid ID Back
-                            </label>
-                            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              {kycProfile.valid_id_back_url ? (
-                                <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                                  View Document
-                                </button>
-                              ) : (
-                                <span className="text-gray-500 dark:text-gray-400">
-                                  Not provided
-                                </span>
-                              )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                Valid ID Type
+                              </p>
+                              <p className="text-gray-900 dark:text-white capitalize">
+                                {kycProfile.valid_id_type?.replace("_", " ") ||
+                                  "—"}
+                              </p>
                             </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Passport Photo
-                          </label>
-                          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            {kycProfile.passport_photo_url ? (
-                              <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                                View Document
-                              </button>
-                            ) : (
-                              <span className="text-gray-500 dark:text-gray-400">
-                                Not provided
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Work Authorization Type
-                          </label>
-                          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <span className="text-gray-900 dark:text-white capitalize">
-                              {kycProfile.work_authorization_type ||
-                                "Not specified"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Work Permit
-                          </label>
-                          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            {kycProfile.work_permit_url ? (
-                              <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                                View Document
-                              </button>
-                            ) : (
-                              <span className="text-gray-500 dark:text-gray-400">
-                                Not provided
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-6">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              ID Verified
-                            </label>
-                            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <span
-                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                Valid ID Verified
+                              </p>
+                              <p
+                                className={`font-medium ${
                                   kycProfile.valid_id_verified
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                    : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                    ? "text-green-600 dark:text-green-400"
+                                    : "text-red-600 dark:text-red-400"
                                 }`}
                               >
                                 {kycProfile.valid_id_verified
                                   ? "Verified"
                                   : "Not Verified"}
-                              </span>
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                Valid ID Front
+                              </p>
+                              {kycProfile.valid_id_front ? (
+                                <button
+                                  onClick={() =>
+                                    handleViewImage(kycProfile.valid_id_front!)
+                                  }
+                                  className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                                >
+                                  View
+                                </button>
+                              ) : (
+                                <span className="text-gray-500 dark:text-gray-400">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                Valid ID Back
+                              </p>
+                              {kycProfile.valid_id_back ? (
+                                <button
+                                  onClick={() =>
+                                    handleViewImage(kycProfile.valid_id_back!)
+                                  }
+                                  className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                                >
+                                  View
+                                </button>
+                              ) : (
+                                <span className="text-gray-500 dark:text-gray-400">
+                                  —
+                                </span>
+                              )}
                             </div>
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Passport Verified
-                            </label>
-                            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <span
-                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  kycProfile.passport_verified
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                    : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                                }`}
+                        </div>
+
+                        {/* Work Authorization Section */}
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                          <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                              Work Authorization
+                            </h3>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() =>
+                                  handleKycVerification(
+                                    "work_authorization",
+                                    true
+                                  )
+                                }
+                                disabled={verifying.work_authorization !== null}
+                                className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                {kycProfile.passport_verified
-                                  ? "Verified"
-                                  : "Not Verified"}
-                              </span>
+                                {verifying.work_authorization === "verify"
+                                  ? "Verifying..."
+                                  : "Verify"}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleKycVerification(
+                                    "work_authorization",
+                                    false
+                                  )
+                                }
+                                disabled={verifying.work_authorization !== null}
+                                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {verifying.work_authorization === "reject"
+                                  ? "Rejecting..."
+                                  : "Reject"}
+                              </button>
                             </div>
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Work Authorization Verified
-                            </label>
-                            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <span
-                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                Authorization Type
+                              </p>
+                              <p className="text-gray-900 dark:text-white capitalize">
+                                {kycProfile.work_authorization_type || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                Work Auth Verified
+                              </p>
+                              <p
+                                className={`font-medium ${
                                   kycProfile.work_authorization_verified
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                    : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                    ? "text-green-600 dark:text-green-400"
+                                    : "text-red-600 dark:text-red-400"
                                 }`}
                               >
                                 {kycProfile.work_authorization_verified
                                   ? "Verified"
                                   : "Not Verified"}
-                              </span>
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                Work Permit Front
+                              </p>
+                              {kycProfile.work_permit_front ? (
+                                <button
+                                  onClick={() =>
+                                    handleViewImage(
+                                      kycProfile.work_permit_front!
+                                    )
+                                  }
+                                  className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                                >
+                                  View
+                                </button>
+                              ) : (
+                                <span className="text-gray-500 dark:text-gray-400">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                Work Permit Back
+                              </p>
+                              {kycProfile.work_permit_back ? (
+                                <button
+                                  onClick={() =>
+                                    handleViewImage(
+                                      kycProfile.work_permit_back!
+                                    )
+                                  }
+                                  className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                                >
+                                  View
+                                </button>
+                              ) : (
+                                <span className="text-gray-500 dark:text-gray-400">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                EIN/TIN Number
+                              </p>
+                              <p className="text-gray-900 dark:text-white">
+                                {kycProfile.ein_tin_number || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                SSN
+                              </p>
+                              <p className="text-gray-900 dark:text-white">
+                                {kycProfile.ssn || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Passport Section */}
+                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                          <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                              Passport & Background
+                            </h3>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() =>
+                                  handleKycVerification("passport", true)
+                                }
+                                disabled={verifying.passport !== null}
+                                className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {verifying.passport === "verify"
+                                  ? "Verifying..."
+                                  : "Verify"}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleKycVerification("passport", false)
+                                }
+                                disabled={verifying.passport !== null}
+                                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {verifying.passport === "reject"
+                                  ? "Rejecting..."
+                                  : "Reject"}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                Passport Verified
+                              </p>
+                              <p
+                                className={`font-medium ${
+                                  kycProfile.passport_verified
+                                    ? "text-green-600 dark:text-green-400"
+                                    : "text-red-600 dark:text-red-400"
+                                }`}
+                              >
+                                {kycProfile.passport_verified
+                                  ? "Verified"
+                                  : "Not Verified"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 dark:text-gray-400">
+                                Allow Background Check
+                              </p>
+                              <p className="text-gray-900 dark:text-white">
+                                {kycProfile.allow_background_check
+                                  ? "Yes"
+                                  : "No"}
+                              </p>
+                            </div>
+                            <div className="md:col-span-2">
+                              <p className="text-gray-500 dark:text-gray-400">
+                                Passport Photo
+                              </p>
+                              {kycProfile.passport_photo ? (
+                                <button
+                                  onClick={() =>
+                                    handleViewImage(kycProfile.passport_photo!)
+                                  }
+                                  className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                                >
+                                  View
+                                </button>
+                              ) : (
+                                <span className="text-gray-500 dark:text-gray-400">
+                                  —
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -607,6 +820,52 @@ const CareSeekerProfileModal: React.FC<CareSeekerProfileModalProps> = ({
           }}
         />
       )}
+
+      {/* Image Viewer Modal */}
+      <Modal
+        isOpen={imageViewerOpen}
+        onClose={() => setImageViewerOpen(false)}
+        size="lg"
+      >
+        <div className="p-4">
+          <div className="mb-4 flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Document Viewer
+            </h3>
+            <button
+              onClick={() => window.open(viewingImageUrl, "_blank")}
+              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium flex items-center gap-1"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+              Open in New Tab
+            </button>
+          </div>
+          <div className="flex justify-center">
+            <img
+              src={viewingImageUrl}
+              alt="Document"
+              className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src =
+                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NjY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=";
+              }}
+            />
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

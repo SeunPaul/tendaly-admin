@@ -147,30 +147,6 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
     },
   ];
 
-  // Mock certificate data
-  const certificates = [
-    {
-      id: 1,
-      type: "CPR",
-      title: "CPR CERTIFICATE",
-      name: "Name Surname",
-      course: "BASIC LIFE SUPPORT (BLS)",
-      issuer: "American Heart Association",
-      certificateNumber: "CPR-2024-001",
-      expirationDate: "Dec 2025",
-    },
-    {
-      id: 2,
-      type: "First Aid",
-      title: "FIRST AID CERTIFICATE FOR CAREGIVERS",
-      name: "Name Surname",
-      course: "FIRST AID",
-      issuer: "American Heart Association",
-      certificateNumber: "FA-2024-001",
-      expirationDate: "Dec 2025",
-    },
-  ];
-
   const tabs = ["Profile Information", "User Reviews", "Review Uploads", "KYC"];
 
   const handleEmailUser = () => {
@@ -193,6 +169,21 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
   const handleViewImage = (imageUrl: string) => {
     setViewingImageUrl(imageUrl);
     setImageViewerOpen(true);
+  };
+
+  const handleViewCertificate = (certificateUrl: string) => {
+    setViewingImageUrl(certificateUrl);
+    setImageViewerOpen(true);
+  };
+
+  const getFileType = (url: string) => {
+    const extension = url.split(".").pop()?.toLowerCase();
+    if (["jpg", "jpeg", "png", "gif", "webp"].includes(extension || "")) {
+      return "image";
+    } else if (extension === "pdf") {
+      return "pdf";
+    }
+    return "unknown";
   };
 
   const handleKycVerification = async (
@@ -584,11 +575,11 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
                 </div>
 
                 {/* Video Introduction */}
-                {caregiver.videoIntro && (
-                  <div className="bg-white p-4 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Introduction Video
-                    </h3>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Introduction Video
+                  </h3>
+                  {caregiver.videoIntro ? (
                     <div className="relative bg-gray-100 rounded-lg overflow-hidden">
                       <video
                         controls
@@ -601,8 +592,26 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
                         Your browser does not support the video tag.
                       </video>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="relative bg-gray-100 p-4 rounded-lg mb-3">
+                      <div className="w-full h-48 bg-gray-300 rounded-lg flex items-center justify-center">
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
+                          <svg
+                            className="w-8 h-8 text-gray-600"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Skills & Specialization */}
                 {(caregiver.languages.length > 0 ||
@@ -728,51 +737,6 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
                       <p className="font-medium">{caregiver.lastActive}</p>
                     </div>
                   </div>
-                </div>
-
-                {/* Certifications */}
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Certifications
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">CPR, First Aid</p>
-                  <div className="bg-gray-100 p-4 rounded-lg mb-3">
-                    <img
-                      src="https://via.placeholder.com/300x200/4F46E5/FFFFFF?text=CPR+CERTIFICATE"
-                      alt="CPR Certificate"
-                      className="w-full rounded"
-                    />
-                  </div>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    Review Certificate
-                  </button>
-                </div>
-
-                {/* Introduction Video */}
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Introduction Video
-                  </h3>
-                  <div className="relative bg-gray-100 p-4 rounded-lg mb-3">
-                    <div className="w-full h-48 bg-gray-300 rounded-lg flex items-center justify-center">
-                      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
-                        <svg
-                          className="w-8 h-8 text-gray-600"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    Review Video
-                  </button>
                 </div>
               </div>
             )}
@@ -910,43 +874,167 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
                   <h3 className="text-lg font-semibold text-gray-900">
                     Certifications
                   </h3>
-                  {certificates.map((cert) => (
-                    <div
-                      key={cert.id}
-                      className="bg-white p-4 rounded-lg border border-gray-200"
-                    >
-                      <div className="bg-gray-100 p-4 rounded-lg mb-3">
-                        <div className="text-center">
-                          <h4 className="font-bold text-gray-900 mb-2">
-                            {cert.title}
-                          </h4>
-                          <p className="text-sm text-gray-600 mb-1">
-                            Name: {cert.name}
-                          </p>
-                          <p className="text-sm text-gray-600 mb-1">
-                            Course: {cert.course}
-                          </p>
-                          <p className="text-sm text-gray-600 mb-1">
-                            Issuer: {cert.issuer}
-                          </p>
-                          <p className="text-sm text-gray-600 mb-1">
-                            Certificate Number: {cert.certificateNumber}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Expiration Date: {cert.expirationDate}
-                          </p>
+                  {caregiver.certificates &&
+                  caregiver.certificates.length > 0 ? (
+                    caregiver.certificates.map((cert, index) => (
+                      <div
+                        key={cert.id}
+                        className="bg-white p-4 rounded-lg border border-gray-200"
+                      >
+                        <div className="flex gap-4">
+                          {/* Certificate Preview */}
+                          <div className="flex-shrink-0">
+                            {cert.certificate_url ? (
+                              <div className="w-32 h-24 bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200">
+                                {getFileType(cert.certificate_url) ===
+                                "image" ? (
+                                  <img
+                                    src={cert.certificate_url}
+                                    alt={`Certificate ${index + 1}`}
+                                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() =>
+                                      handleViewCertificate(
+                                        cert.certificate_url!
+                                      )
+                                    }
+                                  />
+                                ) : getFileType(cert.certificate_url) ===
+                                  "pdf" ? (
+                                  <div
+                                    className="w-full h-full flex flex-col items-center justify-center bg-red-50 cursor-pointer hover:bg-red-100 transition-colors"
+                                    onClick={() =>
+                                      handleViewCertificate(
+                                        cert.certificate_url!
+                                      )
+                                    }
+                                  >
+                                    <svg
+                                      className="w-8 h-8 text-red-600 mb-1"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                                        clipRule="evenodd"
+                                      />
+                                    </svg>
+                                    <span className="text-xs text-red-600 font-medium">
+                                      PDF
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                                    <svg
+                                      className="w-8 h-8 text-gray-500"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                                        clipRule="evenodd"
+                                      />
+                                    </svg>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="w-32 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+                                <svg
+                                  className="w-8 h-8 text-gray-400"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Certificate Details */}
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 mb-2">
+                              Certificate {index + 1}
+                            </h4>
+                            <div className="space-y-1">
+                              {cert.issuing_organization && (
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium">
+                                    Organization:
+                                  </span>{" "}
+                                  {cert.issuing_organization}
+                                </p>
+                              )}
+                              {cert.license_number && (
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium">
+                                    License #:
+                                  </span>{" "}
+                                  {cert.license_number}
+                                </p>
+                              )}
+                              {cert.issue_date && (
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium">Issued:</span>{" "}
+                                  {new Date(
+                                    cert.issue_date
+                                  ).toLocaleDateString()}
+                                </p>
+                              )}
+                              {cert.expiration_date && (
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium">Expires:</span>{" "}
+                                  {new Date(
+                                    cert.expiration_date
+                                  ).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                            {cert.certificate_url && (
+                              <button
+                                onClick={() =>
+                                  handleViewCertificate(cert.certificate_url!)
+                                }
+                                className="mt-3 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+                              >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                  />
+                                </svg>
+                                View Certificate
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">
-                          Certificate Type: {cert.type}
-                        </span>
-                        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                          Review Certificate
-                        </button>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                      <p className="text-gray-500 text-center">
+                        No certificates uploaded
+                      </p>
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 {/* Video Section */}
@@ -954,23 +1042,38 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">
                     Introduction Video
                   </h3>
-                  <div className="relative bg-gray-100 p-4 rounded-lg mb-3">
-                    <div className="w-full h-48 bg-gray-300 rounded-lg flex items-center justify-center">
-                      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
-                        <svg
-                          className="w-8 h-8 text-gray-600"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
+                  {caregiver.videoIntro ? (
+                    <div className="relative bg-gray-100 rounded-lg overflow-hidden mb-3">
+                      <video
+                        controls
+                        className="w-full h-64 object-cover"
+                        poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NjY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkludHJvZHVjdGlvbiBWaWRlbzwvdGV4dD48L3N2Zz4="
+                      >
+                        <source src={caregiver.videoIntro} type="video/mp4" />
+                        <source src={caregiver.videoIntro} type="video/webm" />
+                        <source src={caregiver.videoIntro} type="video/ogg" />
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  ) : (
+                    <div className="relative bg-gray-100 p-4 rounded-lg mb-3">
+                      <div className="w-full h-48 bg-gray-300 rounded-lg flex items-center justify-center">
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
+                          <svg
+                            className="w-8 h-8 text-gray-600"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                   <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                     Review Video
                   </button>
@@ -1258,29 +1361,56 @@ const CaregiverProfileModal: React.FC<CaregiverProfileModalProps> = ({
         }}
       />
 
-      {/* Image Viewer Modal */}
+      {/* Document Viewer Modal */}
       <Modal
         isOpen={imageViewerOpen}
         onClose={() => setImageViewerOpen(false)}
         size="lg"
       >
         <div className="p-4">
-          <div className="mb-4">
+          <div className="mb-4 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">
               Document Viewer
             </h3>
+            <button
+              onClick={() => window.open(viewingImageUrl, "_blank")}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+              Open in New Tab
+            </button>
           </div>
           <div className="flex justify-center">
-            <img
-              src={viewingImageUrl}
-              alt="Document"
-              className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src =
-                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NjY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=";
-              }}
-            />
+            {getFileType(viewingImageUrl) === "pdf" ? (
+              <iframe
+                src={viewingImageUrl}
+                className="w-full h-[70vh] border-0 rounded-lg shadow-lg"
+                title="PDF Document"
+              />
+            ) : (
+              <img
+                src={viewingImageUrl}
+                alt="Document"
+                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src =
+                    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NjY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=";
+                }}
+              />
+            )}
           </div>
         </div>
       </Modal>

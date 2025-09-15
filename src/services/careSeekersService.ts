@@ -90,17 +90,23 @@ export interface CareSeekerUser {
 
 export interface CareSeekerKycProfile {
   id: string;
-  valid_id_type: string;
-  valid_id_front_url: string | null;
-  valid_id_back_url: string | null;
-  valid_id_verified: boolean;
-  passport_photo_url: string | null;
-  passport_verified: boolean;
-  work_authorization_type: string | null;
-  work_permit_url: string | null;
-  work_authorization_verified: boolean;
   created_at: string;
   modified_at: string;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  valid_id_type: string;
+  valid_id_front: string | null;
+  valid_id_back: string | null;
+  work_authorization_type: string | null;
+  work_permit_front: string | null;
+  work_permit_back: string | null;
+  ein_tin_number: string | null;
+  ssn: string | null;
+  passport_photo: string | null;
+  valid_id_verified: boolean;
+  work_authorization_verified: boolean;
+  passport_verified: boolean;
+  allow_background_check: boolean;
 }
 
 export interface CareSeekerProfileResponse {
@@ -110,6 +116,11 @@ export interface CareSeekerProfileResponse {
     user: CareSeekerUser;
     kyc_profile: CareSeekerKycProfile | null;
   };
+}
+
+export interface KycVerificationResponse {
+  success: boolean;
+  message: string;
 }
 
 class CareSeekersService extends BaseApiService {
@@ -142,6 +153,39 @@ class CareSeekersService extends BaseApiService {
   ): Promise<CareSeekerProfileResponse | ApiError> {
     return this.request<CareSeekerProfileResponse>(`/users/careseekers/${id}`, {
       method: "GET",
+    });
+  }
+
+  async verifyValidId(
+    userId: string,
+    verified: boolean
+  ): Promise<KycVerificationResponse> {
+    const endpoint = `/kyc/admin/${userId}/verify-valid-id`;
+    return this.request<KycVerificationResponse>(endpoint, {
+      method: "POST",
+      body: JSON.stringify({ verified }),
+    });
+  }
+
+  async verifyWorkAuthorization(
+    userId: string,
+    verified: boolean
+  ): Promise<KycVerificationResponse> {
+    const endpoint = `/kyc/admin/${userId}/verify-work-authorization`;
+    return this.request<KycVerificationResponse>(endpoint, {
+      method: "POST",
+      body: JSON.stringify({ verified }),
+    });
+  }
+
+  async verifyPassport(
+    userId: string,
+    verified: boolean
+  ): Promise<KycVerificationResponse> {
+    const endpoint = `/kyc/admin/${userId}/verify-passport`;
+    return this.request<KycVerificationResponse>(endpoint, {
+      method: "POST",
+      body: JSON.stringify({ verified }),
     });
   }
 }

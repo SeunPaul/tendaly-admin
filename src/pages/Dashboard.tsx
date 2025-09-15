@@ -94,12 +94,14 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-gray-50 font-nunito">
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-nunito">
         <Sidebar activePage="Dashboard" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading dashboard...</p>
+            <p className="text-gray-600 dark:text-gray-300">
+              Loading dashboard...
+            </p>
           </div>
         </div>
       </div>
@@ -108,11 +110,11 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="flex h-screen bg-gray-50 font-nunito">
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-nunito">
         <Sidebar activePage="Dashboard" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+            <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-6 max-w-md">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg
@@ -130,8 +132,12 @@ const Dashboard = () => {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Error</h3>
-                  <p className="text-sm text-red-700 mt-1">{error}</p>
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                    Error
+                  </h3>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    {error}
+                  </p>
                 </div>
               </div>
             </div>
@@ -143,11 +149,13 @@ const Dashboard = () => {
 
   if (!dashboardData) {
     return (
-      <div className="flex h-screen bg-gray-50 font-nunito">
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-nunito">
         <Sidebar activePage="Dashboard" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-600">No dashboard data available</p>
+            <p className="text-gray-600 dark:text-gray-300">
+              No dashboard data available
+            </p>
           </div>
         </div>
       </div>

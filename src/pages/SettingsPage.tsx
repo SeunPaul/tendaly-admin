@@ -96,7 +96,7 @@ const SettingsPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column - User Information Form */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                 Profile Information
               </h3>
 
@@ -104,7 +104,7 @@ const SettingsPage = () => {
                 <div>
                   <label
                     htmlFor="firstName"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   >
                     First name
                   </label>
@@ -122,7 +122,7 @@ const SettingsPage = () => {
                 <div>
                   <label
                     htmlFor="lastName"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   >
                     Last name
                   </label>
@@ -140,7 +140,7 @@ const SettingsPage = () => {
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   >
                     Email address
                   </label>
@@ -166,7 +166,7 @@ const SettingsPage = () => {
 
             {/* Right Column - Profile Picture Management */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                 Profile Picture
               </h3>
 
@@ -191,7 +191,7 @@ const SettingsPage = () => {
         {activeTab === "Password Settings" && (
           <div className="max-w-md">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                 Change Password
               </h3>
 
@@ -199,7 +199,7 @@ const SettingsPage = () => {
                 <div>
                   <label
                     htmlFor="currentPassword"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   >
                     Current password
                   </label>
@@ -260,7 +260,7 @@ const SettingsPage = () => {
                 <div>
                   <label
                     htmlFor="newPassword"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   >
                     New password
                   </label>
@@ -322,7 +322,7 @@ const SettingsPage = () => {
                 <div>
                   <label
                     htmlFor="retypePassword"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                   >
                     Retype password
                   </label>

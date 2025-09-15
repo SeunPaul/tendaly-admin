@@ -268,10 +268,10 @@ const CaregiversPage = () => {
           </div>
 
           {/* Caregivers Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Verified Caregivers
                 </h3>
                 <div className="flex items-center space-x-3">
@@ -469,9 +469,9 @@ const CaregiversPage = () => {
                 </tbody>
               </table>
             </div>
-            <div className="px-6 py-3 border-t border-gray-200">
+            <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-700">
+                <div className="text-sm text-gray-700 dark:text-gray-300">
                   Showing {(currentPage - 1) * 10 + 1}-
                   {Math.min(currentPage * 10, totalCaregivers)} of{" "}
                   {totalCaregivers.toLocaleString()}
@@ -480,7 +480,7 @@ const CaregiversPage = () => {
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg
                       className="w-4 h-4"
@@ -504,7 +504,7 @@ const CaregiversPage = () => {
                       setCurrentPage(Math.min(totalPages, currentPage + 1))
                     }
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg
                       className="w-4 h-4"

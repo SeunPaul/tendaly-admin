@@ -6,6 +6,17 @@ export interface ApiError {
   error?: string;
 }
 
+// Global logout handler
+let globalLogoutHandler: (() => void) | null = null;
+
+export const setGlobalLogoutHandler = (logoutFn: () => void) => {
+  globalLogoutHandler = logoutFn;
+};
+
+export const clearGlobalLogoutHandler = () => {
+  globalLogoutHandler = null;
+};
+
 class BaseApiService {
   protected baseURL: string;
 
@@ -38,6 +49,14 @@ class BaseApiService {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle 401 Unauthorized responses
+        if (response.status === 401) {
+          console.warn("401 Unauthorized response received. Logging out user.");
+          if (globalLogoutHandler) {
+            globalLogoutHandler();
+          }
+          throw new Error("Session expired. Please log in again.");
+        }
         throw new Error(data.message || "An error occurred");
       }
 
