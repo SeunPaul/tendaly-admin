@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://tendaly-api-30d61a78c08b.herokuapp.com/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BEZA_BRAND_API_URL || "";
 
 export interface ApiError {
   success: false;
