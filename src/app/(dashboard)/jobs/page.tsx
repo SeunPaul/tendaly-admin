@@ -17,6 +17,9 @@ interface Job {
   status: string
   hourly_rate?: number
   created_at: string
+  scheduled_start?: string | null
+  scheduled_end?: string | null
+  care_type?: { id: string; name: string } | null
   posted_by?: {
     id: string
     first_name: string
@@ -71,6 +74,12 @@ export default function JobsPage() {
       },
     },
     {
+      header: 'Care Type',
+      cell: ({ row }) => (
+        <span className="text-sm">{row.original.care_type?.name ?? '—'}</span>
+      ),
+    },
+    {
       header: 'Status',
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
@@ -99,7 +108,8 @@ export default function JobsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="open">Open</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="published">Published</SelectItem>
             <SelectItem value="in_progress">In Progress</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>

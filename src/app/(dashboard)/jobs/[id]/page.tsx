@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, MapPin, Calendar, Clock, DollarSign, User } from 'lucide-react'
+import { ArrowLeft, MapPin, Calendar, DollarSign, User, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatusBadge } from '@/components/ui/status-badge'
@@ -18,19 +18,45 @@ import { Textarea } from '@/components/ui/textarea'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/utils'
 
-interface Shift {
+// Format a date portion of an ISO timestamp in a given IANA timezone
+function fmtDate(iso: string, tz: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(new Date(iso))
+  } catch {
+    return formatDate(iso)
+  }
+}
+
+// Format the time portion of an ISO timestamp in a given IANA timezone
+function fmtTime(iso: string, tz: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(iso))
+  } catch {
+    return iso
+  }
+}
+
+interface Event {
   id: string
-  event_date: string
-  day_of_week?: string
-  scheduled_start_time?: string
-  scheduled_end_time?: string
-  actual_start_time?: string
-  actual_end_time?: string
+  scheduled_start: string
+  scheduled_end: string
+  actual_start?: string | null
+  actual_end?: string | null
   status: string
-  end_reason?: string
-  end_reason_description?: string
-  hours_worked?: number
-  notes?: string
+  end_reason?: string | null
+  end_reason_description?: string | null
+  hours_worked?: number | null
+  amount_earned?: number | null
+  notes?: string | null
   caregiver?: {
     id: string
     first_name: string
@@ -43,20 +69,16 @@ interface JobDetail {
   id: string
   title: string
   status: string
-  published: boolean
   overview?: string
   care_seeker?: string
   care_seeker_age?: number
   care_seeker_gender?: string
   location_address?: string
-  start_date?: string
-  duration?: number
-  start_time?: string
-  stop_time?: string
-  preferred_days?: string[]
   hourly_rate?: number
-  total_cost?: number
+  timezone?: string
   created_at: string
+  scheduled_start?: string | null
+  scheduled_end?: string | null
   care_type?: { id: string; name: string } | null
   service_types?: { id: string; name: string }[]
   requirements?: { id: string; name: string }[]
@@ -66,7 +88,7 @@ interface JobDetail {
     last_name: string
     email: string
   } | null
-  shifts: Shift[]
+  events: Event[]
 }
 
 const CANCELLABLE_STATUSES = ['draft', 'published', 'in_progress']
@@ -76,8 +98,9 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const queryClient = useQueryClient()
 
-  const [forceEndShift, setForceEndShift] = useState<Shift | null>(null)
+  const [forceEndEvent, setForceEndEvent] = useState<Event | null>(null)
   const [forceEndReason, setForceEndReason] = useState('')
+  const [tzMode, setTzMode] = useState<'local' | 'utc'>('local')
 
   const { data: job, isLoading } = useQuery<JobDetail>({
     queryKey: ['job', id],
@@ -95,12 +118,12 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
   })
 
   const forceEndMutation = useMutation({
-    mutationFn: async ({ shiftId, reason }: { shiftId: string; reason: string }) => {
-      await api.patch(`/jobs/admin/events/${shiftId}/force-end`, { reason })
+    mutationFn: async ({ eventId, reason }: { eventId: string; reason: string }) => {
+      await api.patch(`/jobs/admin/events/${eventId}/force-end`, { reason })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['job', id] })
-      setForceEndShift(null)
+      setForceEndEvent(null)
       setForceEndReason('')
     },
   })
@@ -122,6 +145,7 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
   }
 
   const canCancel = CANCELLABLE_STATUSES.includes(job.status)
+  const displayTz = tzMode === 'local' && job.timezone ? job.timezone : 'UTC'
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -139,9 +163,6 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
             <CardTitle className="text-xl">{job.title}</CardTitle>
             <div className="flex items-center gap-2 mt-2">
               <StatusBadge status={job.status} />
-              {job.published && (
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Published</span>
-              )}
             </div>
           </div>
           {canCancel && (
@@ -149,7 +170,7 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
               variant="destructive"
               size="sm"
               onClick={() => {
-                if (confirm('Are you sure you want to cancel this job? This will release any held escrow back to the care seeker.')) {
+                if (confirm('Are you sure you want to cancel this job? This will release any held payment authorizations.')) {
                   cancelJobMutation.mutate()
                 }
               }}
@@ -182,24 +203,26 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
             )}
-            {job.start_date && (
+            {(job.scheduled_start || job.scheduled_end) && (
               <div className="flex items-start gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Start Date</p>
-                  <p className="text-sm font-medium">{formatDate(job.start_date)}</p>
+                  <p className="text-xs text-muted-foreground">Schedule</p>
+                  <p className="text-sm font-medium">
+                    {job.scheduled_start ? fmtDate(job.scheduled_start, job.timezone ?? 'UTC') : '—'}
+                    {job.scheduled_end
+                      ? ` – ${fmtDate(job.scheduled_end, job.timezone ?? 'UTC')}`
+                      : ''}
+                  </p>
                 </div>
               </div>
             )}
-            {(job.start_time || job.stop_time) && (
+            {job.timezone && (
               <div className="flex items-start gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
+                <Globe className="h-4 w-4 text-muted-foreground mt-0.5" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Schedule</p>
-                  <p className="text-sm font-medium">
-                    {job.start_time} — {job.stop_time}
-                    {job.duration ? ` · ${job.duration} weeks` : ''}
-                  </p>
+                  <p className="text-xs text-muted-foreground">Timezone</p>
+                  <p className="text-sm font-medium">{job.timezone}</p>
                 </div>
               </div>
             )}
@@ -208,10 +231,7 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
                 <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5" />
                 <div>
                   <p className="text-xs text-muted-foreground">Rate</p>
-                  <p className="text-sm font-medium">
-                    ${parseFloat(String(job.hourly_rate)).toFixed(2)}/hr
-                    {job.total_cost !== undefined ? ` · $${parseFloat(String(job.total_cost)).toFixed(2)} total` : ''}
-                  </p>
+                  <p className="text-sm font-medium">${parseFloat(String(job.hourly_rate)).toFixed(2)}/hr</p>
                 </div>
               </div>
             )}
@@ -227,17 +247,6 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
               </div>
             )}
           </div>
-
-          {job.preferred_days && job.preferred_days.length > 0 && (
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Preferred Days</p>
-              <div className="flex flex-wrap gap-1">
-                {job.preferred_days.map((d) => (
-                  <span key={d} className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full capitalize">{d}</span>
-                ))}
-              </div>
-            </div>
-          )}
 
           {job.care_type && (
             <div>
@@ -279,14 +288,47 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
         </CardContent>
       </Card>
 
-      {/* Shifts Card */}
+      {/* Events Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Shifts ({job.shifts.length})</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Events ({job.events.length})</CardTitle>
+            {job.timezone && job.events.length > 0 && (
+              <div className="flex items-center gap-1 rounded-md border p-0.5 text-xs">
+                <button
+                  className={`px-2 py-1 rounded transition-colors ${
+                    tzMode === 'local'
+                      ? 'bg-foreground text-background font-medium'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setTzMode('local')}
+                >
+                  Local
+                </button>
+                <button
+                  className={`px-2 py-1 rounded transition-colors ${
+                    tzMode === 'utc'
+                      ? 'bg-foreground text-background font-medium'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setTzMode('utc')}
+                >
+                  UTC
+                </button>
+              </div>
+            )}
+          </div>
+          {job.timezone && job.events.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {tzMode === 'local'
+                ? `Showing times in job timezone: ${job.timezone}`
+                : 'Showing times in UTC'}
+            </p>
+          )}
         </CardHeader>
         <CardContent>
-          {job.shifts.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">No shifts recorded yet.</p>
+          {job.events.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">No events recorded yet.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -298,58 +340,59 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
                     <th className="text-left pb-2 pr-4">Actual</th>
                     <th className="text-left pb-2 pr-4">Status</th>
                     <th className="text-right pb-2 pr-4">Hours</th>
+                    <th className="text-right pb-2 pr-4">Earned</th>
                     <th className="text-right pb-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {job.shifts.map((shift) => (
-                    <tr key={shift.id} className="hover:bg-muted/50">
+                  {job.events.map((event) => (
+                    <tr key={event.id} className="hover:bg-muted/50">
                       <td className="py-3 pr-4">
-                        <p className="font-medium">{formatDate(shift.event_date)}</p>
-                        {shift.day_of_week && (
-                          <p className="text-xs text-muted-foreground capitalize">{shift.day_of_week}</p>
-                        )}
+                        <p className="font-medium">{fmtDate(event.scheduled_start, displayTz)}</p>
                       </td>
                       <td className="py-3 pr-4">
-                        {shift.caregiver ? (
+                        {event.caregiver ? (
                           <div>
                             <p className="font-medium">
-                              {`${shift.caregiver.first_name || ''} ${shift.caregiver.last_name || ''}`.trim() || '—'}
+                              {`${event.caregiver.first_name || ''} ${event.caregiver.last_name || ''}`.trim() || '—'}
                             </p>
-                            <p className="text-xs text-muted-foreground">{shift.caregiver.email}</p>
+                            <p className="text-xs text-muted-foreground">{event.caregiver.email}</p>
                           </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="py-3 pr-4 text-muted-foreground">
-                        {shift.scheduled_start_time && shift.scheduled_end_time
-                          ? `${shift.scheduled_start_time} – ${shift.scheduled_end_time}`
-                          : '—'}
+                      <td className="py-3 pr-4 text-muted-foreground whitespace-nowrap">
+                        {fmtTime(event.scheduled_start, displayTz)} – {fmtTime(event.scheduled_end, displayTz)}
                       </td>
-                      <td className="py-3 pr-4 text-muted-foreground">
-                        {shift.actual_start_time
-                          ? `${shift.actual_start_time}${shift.actual_end_time ? ` – ${shift.actual_end_time}` : ''}`
+                      <td className="py-3 pr-4 text-muted-foreground whitespace-nowrap">
+                        {event.actual_start
+                          ? `${fmtTime(event.actual_start, displayTz)}${event.actual_end ? ` – ${fmtTime(event.actual_end, displayTz)}` : ''}`
                           : '—'}
                       </td>
                       <td className="py-3 pr-4">
-                        <StatusBadge status={shift.status} />
-                        {shift.end_reason_description && (
-                          <p className="text-xs text-muted-foreground mt-0.5 max-w-[160px] truncate" title={shift.end_reason_description}>
-                            {shift.end_reason_description}
+                        <StatusBadge status={event.status} />
+                        {event.end_reason_description && (
+                          <p className="text-xs text-muted-foreground mt-0.5 max-w-[160px] truncate" title={event.end_reason_description}>
+                            {event.end_reason_description}
                           </p>
                         )}
                       </td>
                       <td className="py-3 pr-4 text-right">
-                        {shift.hours_worked != null ? parseFloat(String(shift.hours_worked)).toFixed(2) : '—'}
+                        {event.hours_worked != null ? parseFloat(String(event.hours_worked)).toFixed(2) : '—'}
+                      </td>
+                      <td className="py-3 pr-4 text-right">
+                        {event.amount_earned != null
+                          ? `$${parseFloat(String(event.amount_earned)).toFixed(2)}`
+                          : '—'}
                       </td>
                       <td className="py-3 text-right">
-                        {shift.status === 'in_progress' && (
+                        {event.status === 'in_progress' && (
                           <Button
                             variant="outline"
                             size="sm"
                             className="text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-950"
-                            onClick={() => setForceEndShift(shift)}
+                            onClick={() => setForceEndEvent(event)}
                           >
                             Force End
                           </Button>
@@ -365,13 +408,21 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
       </Card>
 
       {/* Force End Dialog */}
-      <Dialog open={!!forceEndShift} onOpenChange={(open) => { if (!open) { setForceEndShift(null); setForceEndReason('') } }}>
+      <Dialog
+        open={!!forceEndEvent}
+        onOpenChange={(open) => {
+          if (!open) {
+            setForceEndEvent(null)
+            setForceEndReason('')
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Force End Shift</DialogTitle>
+            <DialogTitle>Force End Event</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            This will immediately end the shift and refund the escrowed amount back to the care seeker. Provide a reason for the record.
+            This will immediately end the shift and release the card hold back to the care seeker. Provide a reason for the record.
           </p>
           <Textarea
             placeholder="e.g. Caregiver unresponsive for 4+ hours"
@@ -380,15 +431,24 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
             rows={3}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setForceEndShift(null); setForceEndReason('') }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setForceEndEvent(null)
+                setForceEndReason('')
+              }}
+            >
               Cancel
             </Button>
             <Button
               variant="destructive"
               disabled={!forceEndReason.trim() || forceEndMutation.isPending}
-              onClick={() => forceEndShift && forceEndMutation.mutate({ shiftId: forceEndShift.id, reason: forceEndReason })}
+              onClick={() =>
+                forceEndEvent &&
+                forceEndMutation.mutate({ eventId: forceEndEvent.id, reason: forceEndReason })
+              }
             >
-              Force End Shift
+              Force End
             </Button>
           </DialogFooter>
         </DialogContent>

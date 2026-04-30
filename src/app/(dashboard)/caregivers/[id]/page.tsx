@@ -331,7 +331,7 @@ export default function CaregiverDetailPage({ params }: { params: { id: string }
               {cp.hourly_rate !== undefined && (
                 <div>
                   <dt className="text-xs text-muted-foreground">Hourly Rate</dt>
-                  <dd className="text-sm font-medium">${(cp.hourly_rate / 100).toFixed(2)}/hr</dd>
+                  <dd className="text-sm font-medium">${parseFloat(String(cp.hourly_rate)).toFixed(2)}/hr</dd>
                 </div>
               )}
               {cp.can_travel !== undefined && (
