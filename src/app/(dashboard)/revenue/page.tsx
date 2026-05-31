@@ -23,6 +23,10 @@ interface RevenueSummary {
     net_shift_revenue: number
     withdrawal_fees: number
     stripe_fees_paid: number
+    stripe_fees_breakdown: {
+      processing: number
+      climate_contribution: number
+    }
     other: number
   }
   subscriptions: {
@@ -42,6 +46,8 @@ interface ShiftFeeMetadata {
   scheduled_hours?: number
   caregiver_amount_cents?: number
   customer_amount_cents?: number
+  stripe_processing_fee_cents?: number
+  stripe_climate_fee_cents?: number
   stripe_fee_cents?: number
   net_revenue_cents?: number
 }
@@ -279,12 +285,20 @@ export default function RevenuePage() {
 
       {/* Stripe fees deducted — secondary info */}
       {t && t.stripe_fees_paid > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border border-dashed border-gray-200 px-4 py-3 text-sm text-muted-foreground">
-          <Minus className="h-4 w-4 text-red-400 shrink-0" />
-          <span>
-            <span className="font-medium text-foreground">{fmt(t.stripe_fees_paid)}</span> paid to Stripe in processing fees on shift charges
-            {' '}(gross shift fees {fmt(t.shift_fees)} → net {fmt(t.net_shift_revenue)})
-          </span>
+        <div className="rounded-lg border border-dashed border-gray-200 px-4 py-3 text-sm text-muted-foreground space-y-1">
+          <div className="flex items-center gap-2">
+            <Minus className="h-4 w-4 text-red-400 shrink-0" />
+            <span>
+              <span className="font-medium text-foreground">{fmt(t.stripe_fees_paid)}</span> total paid to Stripe on shift charges
+              {' '}(gross {fmt(t.shift_fees)} → net {fmt(t.net_shift_revenue)})
+            </span>
+          </div>
+          {t.stripe_fees_breakdown && (
+            <div className="flex items-center gap-6 pl-6 text-xs">
+              <span>Processing (2.9% + $0.30): <span className="font-medium text-foreground">{fmt(t.stripe_fees_breakdown.processing)}</span></span>
+              <span>Climate (0.1%): <span className="font-medium text-foreground">{fmt(t.stripe_fees_breakdown.climate_contribution)}</span></span>
+            </div>
+          )}
         </div>
       )}
 
@@ -367,9 +381,21 @@ export default function RevenuePage() {
               {/* Shift fee breakdown */}
               {selected.metadata?.stripe_fee_cents != null && (
                 <>
+                  {selected.metadata.stripe_processing_fee_cents != null && (
+                    <DetailRow
+                      label="Processing Fee"
+                      value={<span className="text-red-400">−{fmtCents(selected.metadata.stripe_processing_fee_cents)}</span>}
+                    />
+                  )}
+                  {selected.metadata.stripe_climate_fee_cents != null && (
+                    <DetailRow
+                      label="Climate (0.1%)"
+                      value={<span className="text-red-400">−{fmtCents(selected.metadata.stripe_climate_fee_cents)}</span>}
+                    />
+                  )}
                   <DetailRow
-                    label="Stripe Fee"
-                    value={<span className="text-red-500">−{fmtCents(selected.metadata.stripe_fee_cents)}</span>}
+                    label="Total Stripe Fee"
+                    value={<span className="text-red-500 font-medium">−{fmtCents(selected.metadata.stripe_fee_cents)}</span>}
                   />
                   <DetailRow
                     label="Net Revenue"
