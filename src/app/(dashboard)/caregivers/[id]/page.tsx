@@ -6,13 +6,14 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Mail, Calendar, Phone, MapPin, Shield,
   CheckCircle, XCircle, Clock, ExternalLink, Star,
-  Globe, Award, Briefcase, Heart, Video, X, ZoomIn, FileText, CreditCard,
+  Globe, Award, Briefcase, Heart, Video, X, ZoomIn, FileText, CreditCard, FlaskConical,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatusBadge } from '@/components/ui/status-badge'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/utils'
+import { getAdmin } from '@/lib/auth'
 
 interface Certificate {
   id: string
@@ -56,6 +57,7 @@ interface CaregiverDetail {
     zip_code?: string
     profile_photo?: string
     is_suspended: boolean
+    is_demo: boolean
     country?: { name: string; flag?: string }
     created_at: string
   }
@@ -163,6 +165,7 @@ export default function CaregiverDetailPage({ params }: { params: { id: string }
   const { id } = params
   const router = useRouter()
   const queryClient = useQueryClient()
+  const isSuperAdmin = getAdmin()?.role === 'super_admin'
 
   const { data: caregiver, isLoading } = useQuery<CaregiverDetail>({
     queryKey: ['caregiver', id],
@@ -179,6 +182,13 @@ export default function CaregiverDetailPage({ params }: { params: { id: string }
       } else {
         await api.patch(`/users/admin/${id}/unsuspend`)
       }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['caregiver', id] }),
+  })
+
+  const demoMutation = useMutation({
+    mutationFn: async (enable: boolean) => {
+      await api.patch(`/admin/users/${id}/demo`, { enable })
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['caregiver', id] }),
   })
@@ -230,6 +240,12 @@ export default function CaregiverDetailPage({ params }: { params: { id: string }
               <CardTitle className="text-xl">{fullName || '(No name)'}</CardTitle>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <StatusBadge status={user.is_suspended ? 'suspended' : 'active'} />
+                {user.is_demo && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
+                    <FlaskConical className="h-3 w-3" />
+                    Demo Account
+                  </span>
+                )}
                 {cp?.accept_booking !== undefined && (
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     cp.accept_booking
@@ -249,14 +265,28 @@ export default function CaregiverDetailPage({ params }: { params: { id: string }
               </div>
             </div>
           </div>
-          <Button
-            variant={user.is_suspended ? 'outline' : 'destructive'}
-            size="sm"
-            onClick={() => suspendMutation.mutate(!user.is_suspended)}
-            disabled={suspendMutation.isPending}
-          >
-            {user.is_suspended ? 'Unsuspend Account' : 'Suspend Account'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {isSuperAdmin && (
+              <Button
+                variant={user.is_demo ? 'outline' : 'secondary'}
+                size="sm"
+                onClick={() => demoMutation.mutate(!user.is_demo)}
+                disabled={demoMutation.isPending}
+                title="Demo accounts bypass KYC and Stripe Connect gates for App Store review"
+              >
+                <FlaskConical className="h-4 w-4 mr-1.5" />
+                {user.is_demo ? 'Disable Demo' : 'Enable Demo'}
+              </Button>
+            )}
+            <Button
+              variant={user.is_suspended ? 'outline' : 'destructive'}
+              size="sm"
+              onClick={() => suspendMutation.mutate(!user.is_suspended)}
+              disabled={suspendMutation.isPending}
+            >
+              {user.is_suspended ? 'Unsuspend Account' : 'Suspend Account'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
