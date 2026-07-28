@@ -18,6 +18,7 @@ import {
   X,
   DollarSign,
   Ticket,
+  Flag,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +35,7 @@ const navItems = [
   { href: '/revenue', label: 'Revenue', icon: DollarSign },
   { href: '/vouchers', label: 'Vouchers', icon: Ticket },
   { href: '/notifications', label: 'Notifications', icon: Bell },
+  { href: '/reports', label: 'Reports', icon: Flag },
   { href: '/admins', label: 'Admins', icon: Shield },
 ]
 
